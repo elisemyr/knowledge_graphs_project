@@ -1,15 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
-
 from backend.main import app
-
 
 client = TestClient(app)
 
-
 def test_health():
     """
-    Basic health check: API must be up and Neo4j must respond.
+    health check : api must be up and neo4j must respond
     """
     response = client.get("/health")
     assert response.status_code == 200
@@ -21,17 +18,17 @@ def test_health():
 
 def test_direct_prereqs_endpoint_exists():
     """
-    Test that the direct prerequisite endpoint responds.
+   test the direct prerequisite endpoint
     """
     response = client.get("/courses/AAS 211/prerequisites?all=false")
-    # We only test the endpoint exists, not the graph data
+    #we only test the endpoint exists  not the graph data
     assert response.status_code == 200
 
 
 def test_all_prereqs_endpoint_exists():
     """
-    Test the recursive prerequisites endpoint.
-    """
+   test recursive prerequisites endpoint
+   """
     response = client.get("/courses/AAS 211/prerequisites?all=true")
     assert response.status_code == 200
     assert "prerequisites" in response.json()
@@ -39,7 +36,7 @@ def test_all_prereqs_endpoint_exists():
 
 def test_cycle_detection_endpoint():
     """
-    Test cycle detection endpoint.
+    test cycle detection endpoint
     """
     response = client.get("/courses/cycles")
     assert response.status_code == 200
@@ -48,7 +45,7 @@ def test_cycle_detection_endpoint():
 
 def test_validation_api():
     """
-    Test prerequisite validation with a minimal request.
+    test prerequisite validation api
     """
     payload = {
         "target_course": "AAS 211",
@@ -59,6 +56,6 @@ def test_validation_api():
     assert response.status_code == 200
 
     data = response.json()
-    # Check keys exist
+    # check that the keys exist
     assert "can_take" in data
     assert "missing_prerequisites" in data
