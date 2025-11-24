@@ -8,7 +8,6 @@ from backend.services import prerequisites as prereq_service
 app = FastAPI(title="Course Prerequisite Planner")
 
 
-
 # health check
 
 @app.get("/health")

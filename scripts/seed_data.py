@@ -27,9 +27,8 @@ from typing import List
 from neo4j import GraphDatabase, Driver
 
 
-# -----------------------------
-# Neo4j connection utilities
-# -----------------------------
+
+# neo4j connection utilities
 
 
 def get_driver() -> Driver:
@@ -44,12 +43,12 @@ def get_driver() -> Driver:
         NEO4J_PASSWORD  (default: password)
         NEO4J_DATABASE  (optional, default: neo4j)
     """
-    # Get connection info from environment, or use safe defaults
+    # get connection info from environment, or use safe defaults
     uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
     user = os.getenv("NEO4J_USER", "neo4j")
     password = os.getenv("NEO4J_PASSWORD", "password")
 
-    # Create the driver - this doesn't connect yet, just prepares it
+    # create the driver 
     driver = GraphDatabase.driver(uri, auth=(user, password))
     return driver
 
@@ -71,9 +70,7 @@ def run_query(driver: Driver, cypher: str, parameters: dict | None = None) -> No
         raise RuntimeError(f"Neo4j query failed: {exc}") from exc
 
 
-# -----------------------------
-# Schema: constraints & indexes
-# -----------------------------
+# schema: constraints & indexes
 
 
 def create_constraints_and_indexes(driver: Driver) -> None:
@@ -85,13 +82,13 @@ def create_constraints_and_indexes(driver: Driver) -> None:
     print("🔧 Creating constraints and indexes (IF NOT EXISTS)...")
 
     queries = [
-        # Unique constraint on Course.code
+        # unique constraint on Course.code
         """
         CREATE CONSTRAINT course_code_unique IF NOT EXISTS
         FOR (c:Course)
         REQUIRE c.code IS UNIQUE
         """,
-        # Optional: index on Course.name (for future use)
+        # index on Course.name
         """
         CREATE INDEX course_name_index IF NOT EXISTS
         FOR (c:Course)
@@ -105,9 +102,9 @@ def create_constraints_and_indexes(driver: Driver) -> None:
     print("✅ Constraints and indexes created.\n")
 
 
-# -----------------------------
+
 # CSV parsing & data import
-# -----------------------------
+
 
 
 def parse_prereqs_row(row: dict) -> List[str]:
@@ -117,7 +114,7 @@ def parse_prereqs_row(row: dict) -> List[str]:
 
     Return the list of prerequisite course codes (non-empty, stripped).
     """
-    # How many prerequisites are declared
+    # how many prerequisites are declared
     count_raw = (row.get("PrerequisiteNumber") or "").strip()
     try:
         prereq_count = int(count_raw) if count_raw else 0
@@ -126,14 +123,14 @@ def parse_prereqs_row(row: dict) -> List[str]:
 
     prereqs: List[str] = []
 
-    # Columns "0", "1", ..., up to "9" (or less)
+    # Columns 
     for i in range(prereq_count):
         col_name = str(i)
         code = (row.get(col_name) or "").strip()
         if code:
             prereqs.append(code)
 
-    # Deduplicate while preserving order
+    # deduplicate while preserving order
     seen = set()
     unique_prereqs: List[str] = []
     for code in prereqs:
@@ -157,7 +154,7 @@ def import_courses_from_csv(driver: Driver, csv_path: Path) -> None:
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV file not found: {csv_path}")
 
-    print(f"📄 Loading CSV: {csv_path}")
+    print(f"Loading CSV: {csv_path}")
 
     created_courses = 0
     created_rel = 0
@@ -165,7 +162,7 @@ def import_courses_from_csv(driver: Driver, csv_path: Path) -> None:
     with csv_path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
 
-        # Optional sanity check on header
+        # safety check on header
         expected_prefix = ["Course", "PrerequisiteNumber"]
         header = reader.fieldnames or []
         if not all(col in header for col in expected_prefix):
@@ -179,7 +176,7 @@ def import_courses_from_csv(driver: Driver, csv_path: Path) -> None:
             if not course_code:
                 continue
 
-            # Create/merge the course node itself
+            # create and merge the course node itself
             run_query(
                 driver,
                 """
@@ -195,7 +192,7 @@ def import_courses_from_csv(driver: Driver, csv_path: Path) -> None:
                 continue
 
             for prereq_code in prereq_codes:
-                # MERGE ensures the prerequisite course exists (creates if not exists)
+                # merge ensures the prerequisite course exists and creates if it doesn't exist
                 run_query(
                     driver,
                     """
@@ -205,8 +202,8 @@ def import_courses_from_csv(driver: Driver, csv_path: Path) -> None:
                     {"pr_code": prereq_code},
                 )
 
-                # Create the relationship: prerequisite -[:PRE_REQUIRES]-> course
-                # MERGE ensures we don't create duplicate relationships
+                # create the relationship: prerequisite -[:PRE_REQUIRES]-> course
+                # merge ensures we don't create duplicate relationships
                 run_query(
                     driver,
                     """
@@ -218,15 +215,13 @@ def import_courses_from_csv(driver: Driver, csv_path: Path) -> None:
                 )
                 created_rel += 1
 
-    print(f"✅ Import finished.")
+    print(f"Import finished")
     print(f"   Courses processed: {created_courses}")
     print(f"   PRE_REQUIRES relationships created: {created_rel}\n")
 
 
-# -----------------------------
-# Main entrypoint
-# -----------------------------
 
+# main entrypoint
 
 def main() -> None:
     """
@@ -236,25 +231,25 @@ def main() -> None:
     Example:
         python scripts/seed_data.py data/courses_prereq.csv
     """
-    # Default CSV location: data/courses.csv
+    # default csv location
     default_path = Path("data") / "courses_prereq.csv"
     csv_arg = sys.argv[1] if len(sys.argv) > 1 else str(default_path)
     csv_path = Path(csv_arg)
 
-    print("🚀 Starting Neo4j seed script...")
+    print(" Starting Neo4j seed script...")
 
     driver = get_driver()
     try:
-        # Check connectivity early
+        #check connectivity early
         driver.verify_connectivity()
-        print("🔌 Connected to Neo4j successfully.\n")
+        print(" connected to Neo4j successfully.\n")
 
         create_constraints_and_indexes(driver)
         import_courses_from_csv(driver, csv_path)
 
     finally:
         driver.close()
-        print("🔒 Neo4j driver closed.")
+        print(" Neo4j driver closed.")
 
 
 if __name__ == "__main__":
