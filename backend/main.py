@@ -8,9 +8,9 @@ from backend.services import prerequisites as prereq_service
 app = FastAPI(title="Course Prerequisite Planner")
 
 
-# ------------------------------
-# Health Check
-# ------------------------------
+
+# health check
+
 @app.get("/health")
 def health_check() -> dict:
     client = get_neo4j_client()
@@ -18,9 +18,8 @@ def health_check() -> dict:
     return {"status": "ok", "neo4j_ok": result[0]["ok"] == 1}
 
 
-# ------------------------------
-# Prerequisite Endpoints
-# ------------------------------
+
+# prerequisite endpoints
 @app.get("/courses/{course_code}/prerequisites")
 def get_course_prereqs(course_code: str, all: bool = True):
     """
@@ -49,9 +48,9 @@ def get_cycles(limit: int = 20):
     return {"count": len(cycles), "cycles": cycles}
 
 
-# ------------------------------
-# Student → Can Take Course?
-# ------------------------------
+
+# is a student can take course?
+
 @app.get("/students/{student_id}/can_take/{course_code}")
 def can_student_take(student_id: str, course_code: str):
     """
@@ -67,9 +66,9 @@ def can_student_take(student_id: str, course_code: str):
     return result
 
 
-# ------------------------------
+
 # POST Validation
-# ------------------------------
+
 class ValidationRequest(BaseModel):
     target_course: str
     completed_courses: List[str]
