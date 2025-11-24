@@ -1,15 +1,15 @@
 # What's Missing in the Graph Schema
 
-## ✅ What You Have Now
+## What You Have Now
 
-- **Course nodes** - Created from CSV
-- **PRE_REQUIRES relationships** - Created from CSV
-- **Queries** - All prerequisite queries work
+- Course nodes - Created from CSV
+- PRE_REQUIRES relationships - Created from CSV
+- Queries - All prerequisite queries work
 
-## ❌ What's Missing
+## What's Missing
 
 ### 1. Student Nodes
-**Why:** Needed for `check_student_can_take()` to work with real students.
+Why: Needed for `check_student_can_take()` to work with real students.
 
 **What to create:**
 ```cypher
@@ -36,7 +36,7 @@ CREATE (s)-[:HAS_COMPLETED]->(c)
 
 ---
 
-### 3. Other Stuff (Optional for now)
+### 3. Other Stuff
 
 - **Program nodes** - For degree programs
 - **Semester nodes** - For scheduling
