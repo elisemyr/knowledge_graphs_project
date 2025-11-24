@@ -1,20 +1,15 @@
-Here is a **clean, clear, simple, and fully relevant README.md**
-for everything you have completed **so far**.
-You can copy-paste it directly into your project.
-
----
 
 # 📘 Course Prerequisite Graph API
 
 *A Neo4j + FastAPI project*
 
-This project builds a graph of university courses and their prerequisites using **Neo4j** and exposes several useful **FastAPI** endpoints to explore the graph, detect cycles, and validate student eligibility for a course.
+This project builds a graph of university courses and their prerequisites using Neo4j and exposes several useful FastAPI endpoints to explore the graph, detect cycles, and validate student eligibility for a course.
 
-This README includes everything needed to **run**, **seed**, and **test** the current version of the project.
+This README includes everything needed to run, and test the current version of the project.
 
 ---
 
-## 🚀 Project Structure (current)
+## Project Structure (current)
 
 ```
 knowledge_graphs_project/
@@ -76,8 +71,6 @@ Neo4j Browser:
 * **Username:** `neo4j`
 * **Password:** `password`
 
-(You can edit these in your `.env` or compose file.)
-
 ---
 
 # 3️⃣ Seed the Database
@@ -135,7 +128,7 @@ Expected response:
 
 # 5️⃣ API Endpoints
 
-## 🔹 Health Check
+## Health Check
 
 `GET /health`
 
@@ -143,7 +136,7 @@ Confirms both API and Neo4j are running.
 
 ---
 
-## 🔹 Get Prerequisites of a Course
+## Get Prerequisites of a Course
 
 `GET /courses/{course_code}/prerequisites?all=true`
 
@@ -209,7 +202,7 @@ Detects loops in the prerequisite structure.
 
 A detailed schema is available here:
 
-👉 `docs/graph_schema.md`
+ `docs/graph_schema.md`
 
 It includes:
 
@@ -231,22 +224,21 @@ This is what remains for later parts of the project:
 * Add test files under `tests/`
 * Improve README with screenshots and architecture diagrams
 
-But everything **assigned to Elise** up to now is fully implemented.
 
 ---
 
-# ✔️ Status
+# Status for the moment 
 
-| Component                  | Status |
-| -------------------------- | ------ |
-| Neo4j driver setup         | ✅ Done |
-| Data seeding               | ✅ Done |
-| Constraints + indexes      | ✅ Done |
-| Graph schema               | ✅ Done |
-| Core Cypher queries        | ✅ Done |
-| Prerequisite validation    | ✅ Done |
-| Cycle detection            | ✅ Done |
-| API endpoints              | ✅ Done |
-| README basic documentation | ✅ Done |
+| Component                  |Status|
+| -------------------------- | -----|
+| Neo4j driver setup         | Done |
+| Data seeding               | Done |
+| Constraints + indexes      | Done |
+| Graph schema               | Done |
+| Core Cypher queries        | Done |
+| Prerequisite validation    | Done |
+| Cycle detection            | Done |
+| API endpoints              | Done |
+| README basic documentation |  Done |
 
 ---
