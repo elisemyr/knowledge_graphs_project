@@ -1,7 +1,6 @@
+# University Course Prerequisite Planner
 
-# 📘 Course Prerequisite Graph API
 
-*A Neo4j + FastAPI project*
 
 This project builds a graph of university courses and their prerequisites using Neo4j and exposes several useful FastAPI endpoints to explore the graph, detect cycles, and validate student eligibility for a course.
 
@@ -35,7 +34,7 @@ knowledge_graphs_project/
 
 ---
 
-# 1️⃣ Installation
+# 1 - Installation
 
 ### Create virtual environment
 
@@ -52,7 +51,7 @@ pip install -r requirements.txt
 
 ---
 
-# 2️⃣ Run Neo4j (Docker)
+# 2 - Run Neo4j (Docker)
 
 This project uses Neo4j **via Docker Compose**.
 
@@ -73,7 +72,7 @@ Neo4j Browser:
 
 ---
 
-# 3️⃣ Seed the Database
+# 3 - Seed the Database
 
 The project includes a script to insert:
 
@@ -91,10 +90,10 @@ python scripts/seed_data.py
 You should see output similar to:
 
 ```
-📘 Creating constraints...
-📘 Loading CSV...
-🔧 Inserted 500 courses
-🔧 Inserted 350 prerequisite edges
+Creating constraints...
+Loading CSV...
+Inserted 500 courses
+ Inserted 350 prerequisite edges
 ```
 
 You can verify in Neo4j Browser:
@@ -106,7 +105,7 @@ MATCH (c)-[:PRE_REQUIRES]->(p) RETURN c, p LIMIT 20;
 
 ---
 
-# 4️⃣ Run the API
+# 4 - Run the API
 
 Start the FastAPI server:
 
@@ -126,7 +125,7 @@ Expected response:
 
 ---
 
-# 5️⃣ API Endpoints
+# 5 - API Endpoints
 
 ## Health Check
 
@@ -151,7 +150,7 @@ Example:
 
 ---
 
-## 🔹 Get All Cycles in the Graph
+## Get All Cycles in the Graph
 
 `GET /courses/cycles`
 
@@ -159,7 +158,7 @@ Detects loops in the prerequisite structure.
 
 ---
 
-## 🔹 Validate If a Student Can Take a Course
+## Validate If a Student Can Take a Course
 
 `POST /validation/prerequisites`
 
@@ -198,7 +197,7 @@ Detects loops in the prerequisite structure.
 
 ---
 
-# 6️⃣ Graph Schema
+# 6 - Graph Schema
 
 A detailed schema is available here:
 
@@ -212,18 +211,6 @@ It includes:
 * Example graph structures
 
 ---
-
-# 7️⃣ Next Steps (for future development)
-
-This is what remains for later parts of the project:
-
-* Add student nodes (`Student`)
-* Add `HAS_COMPLETED` and `TAKES` edges
-* Add program and semester nodes
-* Build planning or recommendation features
-* Add test files under `tests/`
-* Improve README with screenshots and architecture diagrams
-
 
 ---
 
