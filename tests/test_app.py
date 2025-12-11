@@ -59,3 +59,22 @@ def test_validation_api():
     # check that the keys exist
     assert "can_take" in data
     assert "missing_prerequisites" in data
+
+def test_eligibility_endpoint():
+    """
+    Test the eligibility API for a student & course.
+    We only test that:
+    - the endpoint exists
+    - it returns 200 OK
+    - the response contains the expected fields
+    """
+    response = client.get("/api/students/S1/eligibility?course_id=AIS 101")
+    assert response.status_code == 200
+
+    data = response.json()
+
+    # Check required keys exist
+    assert "student_id" in data
+    assert "course_id" in data
+    assert "eligible" in data
+    assert "missing_prerequisites" in data
