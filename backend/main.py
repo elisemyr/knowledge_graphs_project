@@ -7,7 +7,7 @@ from backend.services import prerequisites as prereq_service
 from backend.routes import eligibility
 from backend.routes.degree_planner import router as degree_planner_router
 from backend.routes.graduation_paths import router as paths_router
-
+from backend.routes import schedule_optimizer
 
 
 
@@ -95,4 +95,5 @@ def api_validate_prerequisites(payload: ValidationRequest):
 app.include_router(eligibility.router)
 app.include_router(degree_planner_router)
 app.include_router(paths_router)
+app.include_router(schedule_optimizer.router)
 
