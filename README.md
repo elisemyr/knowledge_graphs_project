@@ -1,7 +1,5 @@
 # University Course Prerequisite Planner
 
-
-
 This project builds a graph of university courses and their prerequisites using Neo4j and exposes several useful FastAPI endpoints to explore the graph, detect cycles, and validate student eligibility for a course.
 
 This README includes everything needed to run, and test the current version of the project.
