@@ -226,6 +226,6 @@ It includes:
 | Prerequisite validation    | Done |
 | Cycle detection            | Done |
 | API endpoints              | Done |
-| README basic documentation |  Done |
+| README basic documentation | Done |
 
 ---
