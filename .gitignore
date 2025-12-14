@@ -1,4 +1,7 @@
-echo "/venv/" >> .gitignore
-echo "/env/" >> .gitignore
-echo "/.env/" >> .gitignore
-echo "/.venv/" >> .gitignore
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+.venv
+.env
+
