@@ -229,10 +229,10 @@ def main() -> None:
         python scripts/seed_data.py [path_to_csv]
 
     Example:
-        python scripts/seed_data.py data/courses_prereq.csv
+        python scripts/seed_data.py data/courses_prerequisites.csv
     """
     # default csv location
-    default_path = Path("data") / "courses_prereq.csv"
+    default_path = Path("data") / "courses_prerequisites.csv"
     csv_arg = sys.argv[1] if len(sys.argv) > 1 else str(default_path)
     csv_path = Path(csv_arg)
 
