@@ -209,37 +209,23 @@ It includes:
 * Example graph structures
 
 ---
-# 7 – Graph Data Science (GDS)
+# 7. Graph Data Science (GDS)
 
-This project leverages the **Neo4j Graph Data Science (GDS) library** to perform in-memory graph analytics on the university course prerequisite network.
+The course prerequisite network is analyzed using the **Neo4j Graph Data Science (GDS)** library.
 
-The objective is to go beyond simple graph traversal queries and extract **structural insights** from the curriculum graph, such as:
-- identifying foundational and high-impact courses,
-- detecting prerequisite bottlenecks,
-- analyzing dependency chains between courses.
+An in-memory projection of the graph is created with:
+- nodes representing `Course`,
+- directed `PRE_REQUIRES` relationships (prerequisite → course).
 
----
+### Algorithms used
 
-### 7.1 In-memory Graph Projection
+- **PageRank**: identifies structurally important courses that unlock many academic paths.
+- **Degree centrality**: highlights prerequisite hubs and bottleneck courses.
+- **Shortest path (Dijkstra)**: computes minimal prerequisite chains between courses.
 
-Before running Graph Data Science algorithms, the course graph is projected into memory.
+These algorithms provide insights into curriculum structure, course importance, and academic progression constraints.
 
-- **Node label**: `Course`
-- **Relationship type**: `PRE_REQUIRES`
-- **Orientation**: `NATURAL` (directed from prerequisite → course)
-
-Cypher query used for the projection:
-
-```cypher
-CALL gds.graph.project(
-  'courseGraph',
-  'Course',
-  {
-    PRE_REQUIRES: {
-      orientation: 'NATURAL'
-    }
-  }
-);
+All GDS-related Cypher queries are stored in the `scripts/gds/` directory.
 
 ---
 
