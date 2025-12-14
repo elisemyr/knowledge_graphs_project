@@ -4,7 +4,7 @@ Uses topological sorting and semester constraints to create optimal course sched
 """
 from typing import List, Dict, Set, Tuple, Optional
 from collections import defaultdict, deque
-from backend.database.neo4j import get_neo4j_driver
+from backend.database.neo4j import get_neo4j_client
 from backend.models.schedule import (
     OptimizedScheduleResponse,
     SemesterSchedule,
@@ -17,7 +17,7 @@ class ScheduleOptimizerService:
     """Service for optimizing student course schedules"""
     
     def __init__(self):
-        self.driver = get_neo4j_driver()
+        self.driver = get_neo4j_client()
     
     def optimize_schedule(
         self,
