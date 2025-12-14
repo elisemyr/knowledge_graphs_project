@@ -1,0 +1,10 @@
+student_id,name,degree_id,year,profile
+S001,Emma Johnson,AAS_BA,2,Strong student meeting prerequisites early
+S002,Liam Martinez,AAS_BA,1,Freshman missing key prerequisites
+S003,Noah Smith,ABE_BS,3,Engineering student following correct sequence
+S004,Olivia Brown,ABE_BS,3,Engineering student with missing prereq
+S005,Ava Davis,ACCY_BS,2,Accounting student stuck in cycle courses
+S006,Sophia Wilson,ACCY_BS,3,Advanced student completing sequence
+S007,Lucas Anderson,ACCY_BS,2,Accounting student taking both cycle courses
+S009,Ethan Lee,ABE_BS,2,Partially completed prereqs
+S010,Isabella Perez,ACCY_BS,1,Early accounting student
