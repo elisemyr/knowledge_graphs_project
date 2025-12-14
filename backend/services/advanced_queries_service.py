@@ -1,543 +1,372 @@
 """
-Advanced Cypher Queries Service
-
-Demonstrates complex Cypher patterns:
-- Recursive traversal (depth >= 3)
-- OPTIONAL MATCH with complex patterns
-- WITH clauses for data transformation
-- UNWIND for list processing
-- Advanced filtering and aggregation
-- Parameter usage throughout
+Moderate Complexity Cypher Queries Service
+Practical queries for school context with advanced patterns
 """
 from typing import List, Dict, Any, Optional
 from backend.database.neo4j import get_neo4j_driver
 
 
-class AdvancedQueriesService:
-    """Service for advanced Cypher query patterns"""
+class ModerateQueriesService:
+    """Service for moderate complexity queries with practical school applications"""
     
     def __init__(self):
         self.driver = get_neo4j_driver()
     
-    # ==================== ADVANCED PATTERN 1 ====================
-    # Recursive traversal with depth >= 3, WITH, filtering
-    
-    def get_deep_prerequisite_chain(
+    def find_bottleneck_courses(
         self,
-        course_code: str,
-        min_depth: int = 3
-    ) -> Dict[str, Any]:
+        min_dependents: int = 3,
+        min_prerequisites: int = 2,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """
-        Find prerequisite chains of depth >= 3 for a course.
+        Find "bottleneck" courses that many students need but have difficult prerequisites.
+        
+        These are critical courses that:
+        - Unlock many other courses (high dependent count)
+        - Require multiple prerequisites themselves
         
         Advanced patterns:
-        - Variable-length path traversal: [:PRE_REQUIRES*3..]
-        - WITH for intermediate aggregation
-        - collect() and size() for counting
-        - Parameters throughout
+        - OPTIONAL MATCH with multiple patterns
+        - Variable-length paths: *1..3
+        - Multiple WITH clauses
+        - Aggregation: count(), collect()
         
         Args:
-            course_code: Target course code
-            min_depth: Minimum chain depth (default 3)
+            min_dependents: Minimum number of courses this must unlock
+            min_prerequisites: Minimum prerequisites required
+            limit: Maximum results to return
             
         Returns:
-            Dict with prerequisite chains organized by depth
+            List of bottleneck courses with metrics
         """
         with self.driver.session() as session:
             query = """
-            // Start with target course
-            MATCH (target:Course {code: $course_code})
+            // Find courses that block progress
+            MATCH (bottleneck:Course)
             
-            // Find paths of depth >= min_depth
-            MATCH path = (target)-[:PRE_REQUIRES*3..]->(prereq:Course)
+            // Count courses that require this course
+            OPTIONAL MATCH (dependent:Course)-[:PRE_REQUIRES]->(bottleneck)
+            WITH bottleneck, count(DISTINCT dependent) as courses_this_unlocks
             
-            // Use WITH to transform and filter
-            WITH target,
-                 path,
-                 prereq,
-                 length(path) as depth,
-                 [node IN nodes(path) | node.code] as chain
-            WHERE depth >= $min_depth
+            // Count prerequisites for this course (depth 1-3)
+            OPTIONAL MATCH (bottleneck)-[:PRE_REQUIRES*1..3]->(prereq:Course)
+            WITH bottleneck, 
+                 courses_this_unlocks,
+                 count(DISTINCT prereq) as total_prereqs
             
-            // Aggregate by depth
-            WITH target,
-                 depth,
-                 collect(DISTINCT {
-                     prerequisite: prereq.code,
-                     name: prereq.name,
-                     full_chain: chain
-                 }) as prerequisites_at_depth
+            // Filter for bottlenecks
+            WHERE courses_this_unlocks >= $min_dependents 
+              AND total_prereqs >= $min_prerequisites
             
-            // Final aggregation
-            RETURN target.code as course,
-                   target.name as course_name,
-                   collect({
-                       depth: depth,
-                       count: size(prerequisites_at_depth),
-                       prerequisites: prerequisites_at_depth
-                   }) as chains_by_depth
-            ORDER BY depth
+            // Get semester availability
+            OPTIONAL MATCH (bottleneck)-[:OFFERED_IN]->(sem:Semester)
+            WITH bottleneck,
+                 courses_this_unlocks,
+                 total_prereqs,
+                 collect(DISTINCT sem.name) as offered_semesters
+            
+            RETURN bottleneck.code as course_code,
+                   bottleneck.name as course_name,
+                   total_prereqs as prerequisites_needed,
+                   courses_this_unlocks as courses_unlocked,
+                   size(offered_semesters) as semesters_offered,
+                   offered_semesters[0..3] as sample_semesters
+            ORDER BY courses_this_unlocks DESC, total_prereqs DESC
+            LIMIT $limit
             """
             
             result = session.run(
                 query,
-                course_code=course_code,
-                min_depth=min_depth
+                min_dependents=min_dependents,
+                min_prerequisites=min_prerequisites,
+                limit=limit
             )
-            record = result.single()
             
-            if not record:
-                return {
-                    "course": course_code,
-                    "found": False,
-                    "chains_by_depth": []
-                }
+            courses = []
+            for record in result:
+                courses.append({
+                    "course_code": record["course_code"],
+                    "course_name": record["course_name"],
+                    "prerequisites_needed": record["prerequisites_needed"],
+                    "courses_unlocked": record["courses_unlocked"],
+                    "semesters_offered": record["semesters_offered"],
+                    "sample_semesters": record["sample_semesters"],
+                    "bottleneck_score": record["courses_unlocked"] * 2 + record["prerequisites_needed"]
+                })
             
-            return {
-                "course": record["course"],
-                "course_name": record["course_name"],
-                "found": True,
-                "chains_by_depth": record["chains_by_depth"]
-            }
+            return courses
     
-    # ==================== ADVANCED PATTERN 2 ====================
-    # OPTIONAL MATCH with complex filtering and UNWIND
-    
-    def get_next_courses_with_analysis(
+    def get_course_recommendations(
         self,
         student_id: str,
-        semester_id: str
-    ) -> List[Dict[str, Any]]:
+        semester_id: str,
+        min_readiness: int = 75,
+        limit: int = 15
+    ) -> Dict[str, Any]:
         """
-        Find courses student can take with detailed prerequisite analysis.
+        Get personalized course recommendations for a student for a specific semester.
+        
+        Calculates a "readiness score" based on:
+        - How many prerequisites are complete
+        - How many courses this will unlock
         
         Advanced patterns:
-        - Multiple OPTIONAL MATCH clauses
-        - UNWIND for list processing
-        - Complex WHERE with all() predicate
-        - Multiple WITH clauses for data transformation
-        - Subquery filtering
+        - Multiple OPTIONAL MATCH patterns
+        - List comprehension with filtering
+        - Complex CASE expressions
+        - Computed metrics (readiness score)
         
         Args:
             student_id: Student ID
-            semester_id: Target semester ID
+            semester_id: Target semester (e.g., 'FALL_2024')
+            min_readiness: Minimum readiness score (0-100)
+            limit: Maximum courses to return
             
         Returns:
-            List of available courses with prerequisite analysis
+            Dict with student info and recommended courses
         """
         with self.driver.session() as session:
             query = """
-            // Get student's completed courses
-            MATCH (s:Student {id: $student_id})
-            OPTIONAL MATCH (s)-[:HAS_COMPLETED]->(completed:Course)
-            WITH s, collect(DISTINCT completed.code) as completed_codes
+            // Get student and completed courses
+            MATCH (student:Student {id: $student_id})
+            OPTIONAL MATCH (student)-[:HAS_COMPLETED]->(completed:Course)
+            WITH student, collect(DISTINCT completed.code) as completed_codes
             
-            // Get courses offered in target semester
-            MATCH (offered:Course)-[:OFFERED_IN]->(sem:Semester {id: $semester_id})
-            WHERE NOT offered.code IN completed_codes
+            // Find courses offered in target semester that aren't completed
+            MATCH (available:Course)-[:OFFERED_IN]->(sem:Semester {id: $semester_id})
+            WHERE NOT available.code IN completed_codes
             
-            // Get all prerequisites for each offered course
-            OPTIONAL MATCH (offered)-[:PRE_REQUIRES*1..]->(prereq:Course)
-            WITH s,
-                 offered,
+            // Check prerequisites for each course
+            OPTIONAL MATCH (available)-[:PRE_REQUIRES]->(prereq:Course)
+            WITH student,
+                 available,
                  completed_codes,
-                 collect(DISTINCT prereq.code) as all_prereq_codes
+                 collect(DISTINCT prereq.code) as required_prereqs
             
             // Calculate missing prerequisites
-            WITH s,
-                 offered,
-                 completed_codes,
-                 all_prereq_codes,
-                 [p IN all_prereq_codes WHERE NOT p IN completed_codes] as missing
+            WITH student,
+                 available,
+                 required_prereqs,
+                 [p IN required_prereqs WHERE NOT p IN completed_codes] as missing_prereqs
             
-            // Get direct prerequisites for analysis
-            OPTIONAL MATCH (offered)-[:PRE_REQUIRES]->(direct_prereq:Course)
-            WITH s,
-                 offered,
-                 completed_codes,
-                 all_prereq_codes,
-                 missing,
-                 collect(DISTINCT {
-                     code: direct_prereq.code,
-                     name: direct_prereq.name,
-                     completed: direct_prereq.code IN completed_codes
-                 }) as direct_prerequisites
+            // Count courses this would unlock
+            OPTIONAL MATCH (future:Course)-[:PRE_REQUIRES]->(available)
+            WITH student,
+                 available,
+                 required_prereqs,
+                 missing_prereqs,
+                 count(DISTINCT future) as unlocks_count
             
-            // Get courses that depend on this course (future planning)
-            OPTIONAL MATCH (future:Course)-[:PRE_REQUIRES*1..2]->(offered)
-            WITH s,
-                 offered,
-                 completed_codes,
-                 all_prereq_codes,
-                 missing,
-                 direct_prerequisites,
-                 collect(DISTINCT future.code) as unlocks_courses
-            
-            // Calculate readiness score
-            WITH s,
-                 offered,
-                 completed_codes,
-                 all_prereq_codes,
-                 missing,
-                 direct_prerequisites,
-                 unlocks_courses,
+            // Calculate readiness score (0-100)
+            WITH student,
+                 available,
+                 size(required_prereqs) as total_prereqs,
+                 size(missing_prereqs) as missing_count,
+                 unlocks_count,
                  CASE 
-                     WHEN size(missing) = 0 THEN 100
-                     WHEN size(all_prereq_codes) = 0 THEN 100
-                     ELSE toInteger(100.0 * (size(all_prereq_codes) - size(missing)) / size(all_prereq_codes))
+                     WHEN size(required_prereqs) = 0 THEN 100
+                     WHEN size(missing_prereqs) = 0 THEN 100
+                     ELSE toInteger(100.0 * (1.0 - toFloat(size(missing_prereqs)) / toFloat(size(required_prereqs))))
                  END as readiness_score
             
-            // Only return courses that are available or nearly available
-            WHERE readiness_score >= 50
+            // Filter by minimum readiness
+            WHERE readiness_score >= $min_readiness
             
-            // UNWIND for detailed prerequisite analysis
-            UNWIND CASE 
-                WHEN size(direct_prerequisites) > 0 
-                THEN direct_prerequisites 
-                ELSE [null] 
-            END as prereq_detail
-            
-            WITH s,
-                 offered,
-                 readiness_score,
-                 missing,
-                 unlocks_courses,
-                 collect(prereq_detail) as prereq_details
-            
-            RETURN offered.code as course_code,
-                   offered.name as course_name,
-                   offered.credits as credits,
+            RETURN available.code as course_code,
+                   available.name as course_name,
+                   available.credits as credits,
                    readiness_score,
-                   size(missing) as missing_count,
-                   missing as missing_prerequisites,
-                   [p IN prereq_details WHERE p IS NOT NULL] as prerequisite_analysis,
-                   size(unlocks_courses) as unlocks_count,
-                   unlocks_courses[0..5] as sample_unlocked_courses
-            ORDER BY readiness_score DESC, course_code
+                   missing_count as prerequisites_missing,
+                   unlocks_count as future_courses_unlocked,
+                   CASE 
+                       WHEN readiness_score = 100 THEN 'Ready Now'
+                       WHEN readiness_score >= 75 THEN 'Almost Ready'
+                       ELSE 'Not Ready'
+                   END as status
+            ORDER BY readiness_score DESC, unlocks_count DESC
+            LIMIT $limit
             """
             
             result = session.run(
                 query,
                 student_id=student_id,
-                semester_id=semester_id
+                semester_id=semester_id,
+                min_readiness=min_readiness,
+                limit=limit
             )
             
+            # Get student info
+            student_query = """
+            MATCH (s:Student {id: $student_id})
+            RETURN s.name as name, s.program as program
+            """
+            student_result = session.run(student_query, student_id=student_id)
+            student_record = student_result.single()
+            
             courses = []
             for record in result:
                 courses.append({
                     "course_code": record["course_code"],
                     "course_name": record["course_name"],
-                    "credits": record["credits"],
+                    "credits": record["credits"] or 3,
                     "readiness_score": record["readiness_score"],
-                    "can_take_now": record["missing_count"] == 0,
-                    "missing_prerequisites": record["missing_prerequisites"],
-                    "prerequisite_analysis": record["prerequisite_analysis"],
-                    "unlocks": {
-                        "count": record["unlocks_count"],
-                        "sample_courses": record["sample_unlocked_courses"]
-                    }
-                })
-            
-            return courses
-    
-    # ==================== ADVANCED PATTERN 3 ====================
-    # Complex graph analysis with multiple patterns
-    
-    def analyze_course_difficulty_and_impact(
-        self,
-        department_prefix: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Analyze course difficulty based on prerequisite depth and impact on other courses.
-        
-        Advanced patterns:
-        - Multiple recursive traversals
-        - OPTIONAL MATCH with depth constraints
-        - Complex aggregations
-        - Conditional logic with CASE
-        - Path analysis
-        
-        Args:
-            department_prefix: Filter by department (e.g., "CS", "MATH")
-            
-        Returns:
-            List of courses with difficulty metrics
-        """
-        with self.driver.session() as session:
-            query = """
-            // Get all courses (with optional filter)
-            MATCH (c:Course)
-            WHERE CASE 
-                WHEN $dept_prefix IS NOT NULL 
-                THEN c.code STARTS WITH $dept_prefix 
-                ELSE true 
-            END
-            
-            // Count direct prerequisites
-            OPTIONAL MATCH (c)-[:PRE_REQUIRES]->(direct_prereq:Course)
-            WITH c, count(DISTINCT direct_prereq) as direct_prereq_count
-            
-            // Count all prerequisites (depth >= 1)
-            OPTIONAL MATCH path1 = (c)-[:PRE_REQUIRES*1..]->(all_prereq:Course)
-            WITH c,
-                 direct_prereq_count,
-                 count(DISTINCT all_prereq) as total_prereq_count,
-                 max(length(path1)) as max_prereq_depth
-            
-            // Count courses that depend on this course (depth >= 1)
-            OPTIONAL MATCH path2 = (dependent:Course)-[:PRE_REQUIRES*1..]->(c)
-            WITH c,
-                 direct_prereq_count,
-                 total_prereq_count,
-                 max_prereq_depth,
-                 count(DISTINCT dependent) as dependent_count,
-                 max(length(path2)) as max_dependent_depth
-            
-            // Find critical path (longest prerequisite chain)
-            OPTIONAL MATCH critical_path = (c)-[:PRE_REQUIRES*]->(leaf:Course)
-            WHERE NOT (leaf)-[:PRE_REQUIRES]->()
-            WITH c,
-                 direct_prereq_count,
-                 total_prereq_count,
-                 max_prereq_depth,
-                 dependent_count,
-                 max_dependent_depth,
-                 critical_path,
-                 length(critical_path) as path_length
-            ORDER BY path_length DESC
-            LIMIT 1
-            
-            WITH c,
-                 direct_prereq_count,
-                 total_prereq_count,
-                 coalesce(max_prereq_depth, 0) as max_prereq_depth,
-                 dependent_count,
-                 coalesce(max_dependent_depth, 0) as max_dependent_depth,
-                 CASE 
-                     WHEN critical_path IS NOT NULL 
-                     THEN [node IN nodes(critical_path) | node.code]
-                     ELSE []
-                 END as critical_chain
-            
-            // Calculate difficulty score (0-100)
-            WITH c,
-                 direct_prereq_count,
-                 total_prereq_count,
-                 max_prereq_depth,
-                 dependent_count,
-                 max_dependent_depth,
-                 critical_chain,
-                 (toFloat(total_prereq_count) * 2 + 
-                  toFloat(max_prereq_depth) * 10) as difficulty_score
-            
-            // Calculate impact score (how many courses this unlocks)
-            WITH c,
-                 direct_prereq_count,
-                 total_prereq_count,
-                 max_prereq_depth,
-                 dependent_count,
-                 max_dependent_depth,
-                 critical_chain,
-                 toInteger(difficulty_score) as difficulty_score,
-                 (toFloat(dependent_count) * 2 + 
-                  toFloat(max_dependent_depth) * 5) as impact_score
-            
-            // Determine course type
-            WITH c,
-                 direct_prereq_count,
-                 total_prereq_count,
-                 max_prereq_depth,
-                 dependent_count,
-                 max_dependent_depth,
-                 critical_chain,
-                 difficulty_score,
-                 toInteger(impact_score) as impact_score,
-                 CASE
-                     WHEN total_prereq_count = 0 AND dependent_count > 5 THEN 'Foundation'
-                     WHEN total_prereq_count > 5 AND dependent_count = 0 THEN 'Capstone'
-                     WHEN dependent_count > 3 THEN 'Core'
-                     WHEN total_prereq_count > 3 THEN 'Advanced'
-                     ELSE 'Regular'
-                 END as course_type
-            
-            RETURN c.code as course_code,
-                   c.name as course_name,
-                   course_type,
-                   direct_prereq_count,
-                   total_prereq_count,
-                   max_prereq_depth,
-                   dependent_count,
-                   max_dependent_depth,
-                   critical_chain,
-                   difficulty_score,
-                   impact_score
-            ORDER BY difficulty_score DESC, impact_score DESC
-            """
-            
-            result = session.run(query, dept_prefix=department_prefix)
-            
-            courses = []
-            for record in result:
-                courses.append({
-                    "course_code": record["course_code"],
-                    "course_name": record["course_name"],
-                    "type": record["course_type"],
-                    "prerequisites": {
-                        "direct": record["direct_prereq_count"],
-                        "total": record["total_prereq_count"],
-                        "max_depth": record["max_prereq_depth"],
-                        "critical_chain": record["critical_chain"]
-                    },
-                    "dependents": {
-                        "count": record["dependent_count"],
-                        "max_depth": record["max_dependent_depth"]
-                    },
-                    "scores": {
-                        "difficulty": record["difficulty_score"],
-                        "impact": record["impact_score"]
-                    }
-                })
-            
-            return courses
-    
-    # ==================== ADVANCED PATTERN 4 ====================
-    # Multi-student comparison with complex aggregation
-    
-    def compare_student_progress(
-        self,
-        student_ids: List[str]
-    ) -> Dict[str, Any]:
-        """
-        Compare progress of multiple students with detailed analysis.
-        
-        Advanced patterns:
-        - UNWIND for list processing
-        - Multiple OPTIONAL MATCH patterns
-        - Complex aggregations with COLLECT
-        - WITH for multiple transformation stages
-        - Comparative analysis
-        
-        Args:
-            student_ids: List of student IDs to compare
-            
-        Returns:
-            Comparison data for all students
-        """
-        with self.driver.session() as session:
-            query = """
-            // UNWIND student IDs for batch processing
-            UNWIND $student_ids as student_id
-            
-            // Get each student
-            MATCH (s:Student {id: student_id})
-            
-            // Get completed courses
-            OPTIONAL MATCH (s)-[:HAS_COMPLETED]->(completed:Course)
-            WITH s,
-                 collect(DISTINCT completed.code) as completed_codes,
-                 collect(DISTINCT {
-                     code: completed.code,
-                     name: completed.name,
-                     credits: completed.credits
-                 }) as completed_details
-            
-            // Calculate total credits
-            WITH s,
-                 completed_codes,
-                 completed_details,
-                 reduce(total = 0, c IN completed_details | total + coalesce(c.credits, 3)) as total_credits
-            
-            // Find available courses (prerequisites met)
-            MATCH (available:Course)
-            WHERE NOT available.code IN completed_codes
-            OPTIONAL MATCH (available)-[:PRE_REQUIRES]->(prereq:Course)
-            WITH s,
-                 completed_codes,
-                 completed_details,
-                 total_credits,
-                 available,
-                 collect(prereq.code) as prereqs
-            WHERE all(p IN prereqs WHERE p IN completed_codes)
-            
-            WITH s,
-                 completed_codes,
-                 completed_details,
-                 total_credits,
-                 count(DISTINCT available) as available_count,
-                 collect(DISTINCT available.code)[0..10] as sample_available
-            
-            // Find courses blocked by missing prerequisites
-            MATCH (blocked:Course)
-            WHERE NOT blocked.code IN completed_codes
-            OPTIONAL MATCH (blocked)-[:PRE_REQUIRES]->(blocked_prereq:Course)
-            WHERE NOT blocked_prereq.code IN completed_codes
-            WITH s,
-                 completed_codes,
-                 completed_details,
-                 total_credits,
-                 available_count,
-                 sample_available,
-                 blocked,
-                 count(DISTINCT blocked_prereq) as missing_count
-            WHERE missing_count > 0
-            
-            WITH s,
-                 completed_codes,
-                 completed_details,
-                 total_credits,
-                 available_count,
-                 sample_available,
-                 count(DISTINCT blocked) as blocked_count
-            
-            // Return comprehensive comparison
-            RETURN s.id as student_id,
-                   s.name as student_name,
-                   s.program as program,
-                   size(completed_codes) as courses_completed,
-                   total_credits,
-                   available_count as courses_available,
-                   blocked_count as courses_blocked,
-                   sample_available,
-                   completed_codes[0..5] as sample_completed,
-                   toFloat(courses_completed) / (courses_completed + courses_available + courses_blocked) * 100 as progress_percentage
-            ORDER BY progress_percentage DESC
-            """
-            
-            result = session.run(query, student_ids=student_ids)
-            
-            students = []
-            for record in result:
-                students.append({
-                    "student_id": record["student_id"],
-                    "student_name": record["student_name"],
-                    "program": record["program"],
-                    "completed": {
-                        "count": record["courses_completed"],
-                        "credits": record["total_credits"],
-                        "sample": record["sample_completed"]
-                    },
-                    "available": {
-                        "count": record["courses_available"],
-                        "sample": record["sample_available"]
-                    },
-                    "blocked": {
-                        "count": record["courses_blocked"]
-                    },
-                    "progress_percentage": round(record["progress_percentage"], 2)
+                    "prerequisites_missing": record["prerequisites_missing"],
+                    "future_courses_unlocked": record["future_courses_unlocked"],
+                    "status": record["status"]
                 })
             
             return {
-                "students": students,
-                "comparison_count": len(students)
+                "student_id": student_id,
+                "student_name": student_record["name"] if student_record else None,
+                "program": student_record["program"] if student_record else None,
+                "semester_id": semester_id,
+                "recommendations": courses,
+                "total_recommendations": len(courses)
+            }
+    
+    def get_courses_by_prerequisite_depth(
+        self,
+        student_id: str,
+        limit: int = 20
+    ) -> Dict[str, Any]:
+        """
+        Show remaining courses organized by prerequisite depth.
+        
+        Helps students see which courses they can take sooner vs later.
+        
+        Advanced patterns:
+        - List comprehension with WHERE filtering
+        - Variable-length paths with bounds: *1..5
+        - max(length(path)) aggregation
+        - Multiple WITH clauses
+        - CASE expressions
+        
+        Args:
+            student_id: Student ID
+            limit: Maximum courses to return
+            
+        Returns:
+            Dict with courses organized by readiness
+        """
+        with self.driver.session() as session:
+            query = """
+            // Get student and completed courses
+            MATCH (student:Student {id: $student_id})
+            OPTIONAL MATCH (student)-[:HAS_COMPLETED]->(completed:Course)
+            WITH student, collect(DISTINCT completed.code) as completed_codes
+            
+            // Find remaining courses
+            MATCH (remaining:Course)
+            WHERE NOT remaining.code IN completed_codes
+            
+            // Count direct prerequisites
+            OPTIONAL MATCH (remaining)-[:PRE_REQUIRES]->(direct_prereq:Course)
+            WITH student,
+                 remaining,
+                 completed_codes,
+                 collect(DISTINCT direct_prereq.code) as direct_prereqs
+            
+            // Calculate missing direct prerequisites
+            WITH student,
+                 remaining,
+                 direct_prereqs,
+                 [p IN direct_prereqs WHERE NOT p IN completed_codes] as missing_prereqs
+            
+            // Get maximum depth of prerequisite chain (limited to 5)
+            OPTIONAL MATCH path = (remaining)-[:PRE_REQUIRES*1..5]->(deep_prereq:Course)
+            WHERE NOT deep_prereq.code IN completed_codes
+            WITH student,
+                 remaining,
+                 size(direct_prereqs) as total_direct_prereqs,
+                 size(missing_prereqs) as missing_direct_prereqs,
+                 CASE 
+                     WHEN count(path) = 0 THEN 0
+                     ELSE max(length(path))
+                 END as max_depth
+            
+            // Get semester availability
+            OPTIONAL MATCH (remaining)-[:OFFERED_IN]->(sem:Semester)
+            WITH remaining,
+                 total_direct_prereqs,
+                 missing_direct_prereqs,
+                 max_depth,
+                 count(DISTINCT sem) as semesters_offered
+            
+            // Only show courses with prerequisites
+            WHERE total_direct_prereqs > 0
+            
+            RETURN remaining.code as course_code,
+                   remaining.name as course_name,
+                   total_direct_prereqs as total_prerequisites,
+                   missing_direct_prereqs as prerequisites_missing,
+                   max_depth as chain_depth,
+                   semesters_offered,
+                   CASE 
+                       WHEN missing_direct_prereqs = 0 THEN 'Ready Now'
+                       WHEN missing_direct_prereqs <= 1 THEN 'Almost Ready'
+                       WHEN missing_direct_prereqs <= 2 THEN 'Plan Soon'
+                       ELSE 'Plan Later'
+                   END as recommendation
+            ORDER BY missing_direct_prereqs ASC, max_depth ASC, course_code
+            LIMIT $limit
+            """
+            
+            result = session.run(query, student_id=student_id, limit=limit)
+            
+            # Get student info
+            student_query = """
+            MATCH (s:Student {id: $student_id})
+            OPTIONAL MATCH (s)-[:HAS_COMPLETED]->(c:Course)
+            RETURN s.name as name, 
+                   s.program as program,
+                   count(c) as completed_count
+            """
+            student_result = session.run(student_query, student_id=student_id)
+            student_record = student_result.single()
+            
+            # Organize courses by recommendation
+            courses_by_status = {
+                "ready_now": [],
+                "almost_ready": [],
+                "plan_soon": [],
+                "plan_later": []
+            }
+            
+            all_courses = []
+            for record in result:
+                course = {
+                    "course_code": record["course_code"],
+                    "course_name": record["course_name"],
+                    "total_prerequisites": record["total_prerequisites"],
+                    "prerequisites_missing": record["prerequisites_missing"],
+                    "chain_depth": record["chain_depth"],
+                    "semesters_offered": record["semesters_offered"],
+                    "recommendation": record["recommendation"]
+                }
+                all_courses.append(course)
+                
+                # Categorize
+                status = record["recommendation"].lower().replace(" ", "_")
+                if status in courses_by_status:
+                    courses_by_status[status].append(course)
+            
+            return {
+                "student_id": student_id,
+                "student_name": student_record["name"] if student_record else None,
+                "program": student_record["program"] if student_record else None,
+                "completed_courses": student_record["completed_count"] if student_record else 0,
+                "courses_by_status": courses_by_status,
+                "all_courses": all_courses,
+                "total_remaining": len(all_courses)
             }
 
 
 # Singleton instance
-_advanced_queries_service = None
+_moderate_queries_service = None
 
-def get_advanced_queries_service() -> AdvancedQueriesService:
-    """Get or create advanced queries service instance"""
-    global _advanced_queries_service
-    if _advanced_queries_service is None:
-        _advanced_queries_service = AdvancedQueriesService()
-    return _advanced_queries_service
+def get_moderate_queries_service() -> ModerateQueriesService:
+    """Get or create moderate queries service instance"""
+    global _moderate_queries_service
+    if _moderate_queries_service is None:
+        _moderate_queries_service = ModerateQueriesService()
+    return _moderate_queries_service
