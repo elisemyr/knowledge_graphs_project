@@ -113,11 +113,8 @@ MATCH (c:Course {code: 'CS 225'})-[:PRE_REQUIRES*]->(prereq:Course)
 RETURN c.code, collect(prereq.code) as prerequisites
 ```
 
-| Metric | Without Index | With Index | Improvement |
-|--------|--------------|------------|-------------|
-| Execution Time | ~50ms | ~2ms | 25x faster |
-| Db Hits | 1000+ | 20-30 | 40x fewer |
-| Node Scans | Full scan | Index lookup | O(n) → O(log n) |
+Without indexes: O(n)  
+With indexes: O(log n)
 
 ---
 
@@ -130,11 +127,8 @@ OPTIONAL MATCH (target)-[:PRE_REQUIRES]->(prereq:Course)
 RETURN target, completed, collect(prereq.code) as required
 ```
 
-| Metric | Without Indexes | With Indexes | Improvement |
-|--------|----------------|--------------|-------------|
-| Execution Time | ~100ms | ~5ms | 20x faster |
-| Student Lookup | O(n) scan | O(log n) | ~1000x at scale |
-| Course Lookup | O(n) scan | O(log n) | ~55x faster |
+Without indexes: O(n) scan 
+With indexes: O(log n)
 
 ---
 
@@ -147,11 +141,8 @@ WHERE NOT available.code IN completed
 RETURN available
 ```
 
-| Metric | Without Indexes | With Indexes | Improvement |
-|--------|----------------|--------------|-------------|
-| Execution Time | ~200ms | ~8ms | 25x faster |
-| Total Db Hits | 5000+ | 150-200 | 30x fewer |
-| Pattern Matches | O(n×m) | O(log n × log m) | Exponential |
+Without indexes: O(n×m) 
+With indexes: O(log n × log m)
 
 ---
 
