@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Virtual environment
+.env
+.venv/
+venv/
+
+# Docker
+docker-compose.yml
+Dockerfile
+.docker
+.dockerignore
+
+# PyCharm
+.idea
+
+# Python mode for VIM
+.ropeproject
+**/.ropeproject
+
+# Vim swap files
+**/*.swp
+
+# VS Code
+.vscode/
+
+# log stuff:
+*.log
