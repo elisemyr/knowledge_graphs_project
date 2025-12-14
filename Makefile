@@ -2,14 +2,17 @@
 
 # Image tag (override with: make docker-build TAG=myorg/myapp:dev)
 TAG ?= graph-api:dev
+GRAPH_API_PORT ?= 8001
+
+
 
 help:
 	@echo "Commands:"
 	@echo "  make venv           Create local virtualenv (.venv)"
 	@echo "  make install        Install requirements into .venv"
-	@echo "  make run            Run FastAPI (uvicorn) on :8000"
+	@echo "  make run            Run FastAPI (uvicorn) on :$(GRAPH_API_PORT)"
 	@echo "  make docker-build   Build Docker image (TAG=$(TAG))"
-	@echo "  make docker-run     Run Docker container on :8000"
+	@echo "  make docker-run     Run Docker container on :$(GRAPH_API_PORT)"
 	@echo "  make lint           Run pylint (if configured)"
 	@echo "  make format         Run black code formatter"
 	@echo "  make clean          Remove caches and temp files"
@@ -27,13 +30,19 @@ install: venv
 	@. .venv/bin/activate && pip install -r requirements.txt
 
 run:
-	@. .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+	@. .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $(GRAPH_API_PORT) --reload
 
 docker-build:
 	docker build -t $(TAG) .
 
 docker-run:
-	docker run --rm -it -p 8000:8000 --env-file .env $(TAG)
+	docker run --rm -it -p $(GRAPH_API_PORT):$(GRAPH_API_PORT) --env-file .env $(TAG)
+
+docker-compose-up:
+	docker compose up --force-recreate 
+
+docker-compose-down:
+	docker compose down
 
 lint:
 	@if command -v .venv/bin/pylint >/dev/null 2>&1; then \
@@ -42,7 +51,7 @@ lint:
 
 format:
 	@if command -v .venv/bin/black >/dev/null 2>&1; then \
-		.venv/bin/black app -l 120; \
+		.venv/bin/black ./backend/ -l 120; \
 	else echo "black not installed (add to requirements.txt)"; fi
 
 clean:
