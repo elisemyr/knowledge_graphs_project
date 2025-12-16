@@ -1,22 +1,26 @@
 .PHONY: help run docker-build docker-run clean venv install lint format tree
 
 # Image tag (override with: make docker-build TAG=myorg/myapp:dev)
-TAG ?= graph-api:dev
+TAG ?= graph-api:universityplanner-project
+REPO ?= docker.io/asabourdin
 GRAPH_API_PORT ?= 8001
 
 
 
 help:
 	@echo "Commands:"
-	@echo "  make venv           Create local virtualenv (.venv)"
-	@echo "  make install        Install requirements into .venv"
-	@echo "  make run            Run FastAPI (uvicorn) on :$(GRAPH_API_PORT)"
-	@echo "  make docker-build   Build Docker image (TAG=$(TAG))"
-	@echo "  make docker-run     Run Docker container on :$(GRAPH_API_PORT)"
-	@echo "  make lint           Run pylint (if configured)"
-	@echo "  make format         Run black code formatter"
-	@echo "  make clean          Remove caches and temp files"
-	@echo "  make tree           Show project tree (depth 3)"
+	@echo "  make venv                 Create local virtualenv (.venv)"
+	@echo "  make install              Install requirements into .venv"
+	@echo "  make run                  Run FastAPI (uvicorn) on :$(GRAPH_API_PORT)"
+	@echo "  make docker-build         Build Docker image (REPO/TAG=$(REPO)/$(TAG))"
+	@echo "  make docker-build         Push Docker image (REPO/TAG=$(REPO)/$(TAG)) to docker hub"
+	@echo "  make docker-run           Run Docker container on :$(GRAPH_API_PORT)"
+	@echo "  make docker-compose-up    Run docker compose up"
+	@echo "  make docker-compose-down  Run docker compose down"
+	@echo "  make lint                 Run pylint (if configured)"
+	@echo "  make format               Run black code formatter"
+	@echo "  make clean                Remove caches and temp files"
+	@echo "  make tree                 Show project tree (depth 3)"
 
 venv:
 	@if [ ! -d ".venv" ]; then \
@@ -33,13 +37,20 @@ run:
 	@. .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $(GRAPH_API_PORT) --reload
 
 docker-build:
-	docker build -t $(TAG) .
+	docker build -t $(REPO)/$(TAG) .
+
+docker-push:
+	docker push $(REPO)/$(TAG)
 
 docker-run:
-	docker run --rm -it -p $(GRAPH_API_PORT):$(GRAPH_API_PORT) --env-file .env $(TAG)
+	@if [ -f ".env" ]; then \
+		docker run --rm -it -p $(GRAPH_API_PORT):$(GRAPH_API_PORT) --env-file .env $(REPO)/$(TAG) ; \doc
+	else echo ".env is missing"; fi
 
 docker-compose-up:
-	docker compose up --force-recreate 
+	@if [ -f ".env" ]; then \
+	    docker compose --env-file .env up  --force-recreate ; \
+	else echo ".env is missing"; fi
 
 docker-compose-down:
 	docker compose down
