@@ -11,7 +11,7 @@ services:
       HEALTHCHECK_USER: "neo4j"
       HEALTHCHECK_PASSWORD: "password"
     volumes:
-      - neo4j_data:/data
+      - neo4j_data: data
     healthcheck:
       test: ["CMD-SHELL", "cypher-shell -u $${HEALTHCHECK_USER} -p $${HEALTHCHECK_PASSWORD} 'RETURN 1'"]
       interval: 10s
@@ -57,4 +57,4 @@ services:
       start_period: 30s
       timeout: 10s
 volumes:
-  neo4j_data:
+  neo4j_data: data
