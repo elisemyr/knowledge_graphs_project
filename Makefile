@@ -13,7 +13,7 @@ help:
 	@echo "  make install              Install requirements into .venv"
 	@echo "  make run                  Run FastAPI (uvicorn) on :$(GRAPH_API_PORT)"
 	@echo "  make docker-build         Build Docker image (REPO/TAG=$(REPO)/$(TAG))"
-	@echo "  make docker-build         Push Docker image (REPO/TAG=$(REPO)/$(TAG)) to docker hub"
+	@echo "  make docker-push          Push Docker image (REPO/TAG=$(REPO)/$(TAG)) to docker hub"
 	@echo "  make docker-run           Run Docker container on :$(GRAPH_API_PORT)"
 	@echo "  make docker-compose-up    Run docker compose up"
 	@echo "  make docker-compose-down  Run docker compose down"
@@ -44,7 +44,7 @@ docker-push:
 
 docker-run:
 	@if [ -f ".env" ]; then \
-		docker run --rm -it -p $(GRAPH_API_PORT):$(GRAPH_API_PORT) --env-file .env $(REPO)/$(TAG) ; \doc
+		docker run --rm -it -p $(GRAPH_API_PORT):$(GRAPH_API_PORT) --name kgfx-run --env-file .env $(REPO)/$(TAG); \
 	else echo ".env is missing"; fi
 
 docker-compose-up:
