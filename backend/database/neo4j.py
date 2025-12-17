@@ -90,13 +90,9 @@ class Neo4jClient:
         try:
             with self._get_session() as session:
                 if read_only:
-                    result = session.execute_read(
-                        lambda tx: list(tx.run(cypher, **parameters))
-                    )
+                    result = session.execute_read(lambda tx: list(tx.run(cypher, **parameters)))
                 else:
-                    result = session.execute_write(
-                        lambda tx: list(tx.run(cypher, **parameters))
-                    )
+                    result = session.execute_write(lambda tx: list(tx.run(cypher, **parameters)))
 
             # Convert records to plain dicts
             return [record.data() for record in result]
@@ -126,4 +122,3 @@ def get_neo4j_client() -> Neo4jClient:
     database = os.getenv("NEO4J_DATABASE", "neo4j")
 
     return Neo4jClient(uri=uri, user=user, password=password, database=database)
-

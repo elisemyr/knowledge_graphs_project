@@ -55,12 +55,7 @@ def plan_degree(student_id: str, degree_id: str):
     missing = sorted(required - completed)
 
     if not missing:
-        return {
-            "student_id": student_id,
-            "degree_id": degree_id,
-            "remaining_courses": [],
-            "recommended_sequence": []
-        }
+        return {"student_id": student_id, "degree_id": degree_id, "remaining_courses": [], "recommended_sequence": []}
 
     ordered = degree_topological_sort(missing)
 
@@ -70,12 +65,12 @@ def plan_degree(student_id: str, degree_id: str):
             "degree_id": degree_id,
             "remaining_courses": missing,
             "recommended_sequence": None,
-            "warning": "Cycle detected in degree requirements"
+            "warning": "Cycle detected in degree requirements",
         }
 
     return {
         "student_id": student_id,
         "degree_id": degree_id,
         "remaining_courses": missing,
-        "recommended_sequence": ordered
+        "recommended_sequence": ordered,
     }

@@ -1,9 +1,5 @@
-from typing import List, Set
-from backend.services.degree_planner_service import (
-    get_degree_requirements, 
-    get_completed_courses,
-    get_direct_prereqs
-)
+from typing import List
+from backend.services.degree_planner_service import get_degree_requirements, get_completed_courses, get_direct_prereqs
 
 
 def build_graph(courses: List[str]):
@@ -44,12 +40,16 @@ def all_topological_orders(graph):
 def generate_graduation_paths(student_id: str):
     # Determine student degree
     from backend.database.neo4j import get_neo4j_client
+
     client = get_neo4j_client()
 
-    degree_result = client.query("""
+    degree_result = client.query(
+        """
         MATCH (s:Student {student_id: $sid})-[:ENROLLED_IN]->(d:Degree)
         RETURN d.degree_id AS degree
-    """, {"sid": student_id})
+    """,
+        {"sid": student_id},
+    )
 
     if not degree_result:
         return {"error": "Student not found"}
@@ -62,11 +62,7 @@ def generate_graduation_paths(student_id: str):
     missing = sorted(required - completed)
 
     if not missing:
-        return {
-            "student_id": student_id,
-            "degree_id": degree_id,
-            "paths": [["Already graduated"]]
-        }
+        return {"student_id": student_id, "degree_id": degree_id, "paths": [["Already graduated"]]}
 
     # Build dependency graph
     graph = build_graph(missing)
@@ -74,9 +70,4 @@ def generate_graduation_paths(student_id: str):
     # Enumerate all valid paths
     paths = all_topological_orders(graph)
 
-    return {
-        "student_id": student_id,
-        "degree_id": degree_id,
-        "missing_courses": missing,
-        "paths": paths
-    }
+    return {"student_id": student_id, "degree_id": degree_id, "missing_courses": missing, "paths": paths}

@@ -1,12 +1,14 @@
 """
 Pydantic models for schedule optimization
 """
+
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 class CourseInSchedule(BaseModel):
     """A course scheduled in a specific semester"""
+
     course_code: str = Field(..., description="Course code (e.g., 'CS 101')")
     course_name: str = Field(..., description="Course name")
     credits: Optional[int] = Field(None, description="Credit hours")
@@ -15,6 +17,7 @@ class CourseInSchedule(BaseModel):
 
 class SemesterSchedule(BaseModel):
     """Schedule for one semester"""
+
     semester_id: str = Field(..., description="Semester ID (e.g., 'FALL_2024')")
     semester_name: str = Field(..., description="Human-readable semester name")
     year: int = Field(..., description="Year")
@@ -26,6 +29,7 @@ class SemesterSchedule(BaseModel):
 
 class OptimizedScheduleResponse(BaseModel):
     """Response for optimized schedule"""
+
     student_id: str = Field(..., description="Student ID")
     student_name: Optional[str] = Field(None, description="Student name")
     program: Optional[str] = Field(None, description="Student's program")
@@ -38,6 +42,7 @@ class OptimizedScheduleResponse(BaseModel):
 
 class ScheduleConstraints(BaseModel):
     """Constraints for schedule optimization"""
+
     max_courses_per_semester: int = Field(5, ge=1, le=8, description="Maximum courses per semester")
     max_credits_per_semester: int = Field(18, ge=6, le=24, description="Maximum credit hours per semester")
     target_semesters: Optional[int] = Field(8, ge=1, le=12, description="Target number of semesters")

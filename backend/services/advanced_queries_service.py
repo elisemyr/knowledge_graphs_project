@@ -2,40 +2,38 @@
 Moderate Complexity Cypher Queries Service
 Practical queries for school context with advanced patterns
 """
-from typing import List, Dict, Any, Optional
+
+from typing import List, Dict, Any
 from backend.database.neo4j import get_neo4j_driver
 
 
 class ModerateQueriesService:
     """Service for moderate complexity queries with practical school applications"""
-    
+
     def __init__(self):
         self.driver = get_neo4j_driver()
-    
+
     def find_bottleneck_courses(
-        self,
-        min_dependents: int = 3,
-        min_prerequisites: int = 2,
-        limit: int = 10
+        self, min_dependents: int = 3, min_prerequisites: int = 2, limit: int = 10
     ) -> List[Dict[str, Any]]:
         """
         Find "bottleneck" courses that many students need but have difficult prerequisites.
-        
+
         These are critical courses that:
         - Unlock many other courses (high dependent count)
         - Require multiple prerequisites themselves
-        
+
         Advanced patterns:
         - OPTIONAL MATCH with multiple patterns
         - Variable-length paths: *1..3
         - Multiple WITH clauses
         - Aggregation: count(), collect()
-        
+
         Args:
             min_dependents: Minimum number of courses this must unlock
             min_prerequisites: Minimum prerequisites required
             limit: Maximum results to return
-            
+
         Returns:
             List of bottleneck courses with metrics
         """
@@ -74,54 +72,47 @@ class ModerateQueriesService:
             ORDER BY courses_this_unlocks DESC, total_prereqs DESC
             LIMIT $limit
             """
-            
-            result = session.run(
-                query,
-                min_dependents=min_dependents,
-                min_prerequisites=min_prerequisites,
-                limit=limit
-            )
-            
+
+            result = session.run(query, min_dependents=min_dependents, min_prerequisites=min_prerequisites, limit=limit)
+
             courses = []
             for record in result:
-                courses.append({
-                    "course_code": record["course_code"],
-                    "course_name": record["course_name"],
-                    "prerequisites_needed": record["prerequisites_needed"],
-                    "courses_unlocked": record["courses_unlocked"],
-                    "semesters_offered": record["semesters_offered"],
-                    "sample_semesters": record["sample_semesters"],
-                    "bottleneck_score": record["courses_unlocked"] * 2 + record["prerequisites_needed"]
-                })
-            
+                courses.append(
+                    {
+                        "course_code": record["course_code"],
+                        "course_name": record["course_name"],
+                        "prerequisites_needed": record["prerequisites_needed"],
+                        "courses_unlocked": record["courses_unlocked"],
+                        "semesters_offered": record["semesters_offered"],
+                        "sample_semesters": record["sample_semesters"],
+                        "bottleneck_score": record["courses_unlocked"] * 2 + record["prerequisites_needed"],
+                    }
+                )
+
             return courses
-    
+
     def get_course_recommendations(
-        self,
-        student_id: str,
-        semester_id: str,
-        min_readiness: int = 75,
-        limit: int = 15
+        self, student_id: str, semester_id: str, min_readiness: int = 75, limit: int = 15
     ) -> Dict[str, Any]:
         """
         Get personalized course recommendations for a student for a specific semester.
-        
+
         Calculates a "readiness score" based on:
         - How many prerequisites are complete
         - How many courses this will unlock
-        
+
         Advanced patterns:
         - Multiple OPTIONAL MATCH patterns
         - List comprehension with filtering
         - Complex CASE expressions
         - Computed metrics (readiness score)
-        
+
         Args:
             student_id: Student ID
             semester_id: Target semester (e.g., 'FALL_2024')
             min_readiness: Minimum readiness score (0-100)
             limit: Maximum courses to return
-            
+
         Returns:
             Dict with student info and recommended courses
         """
@@ -186,15 +177,11 @@ class ModerateQueriesService:
             ORDER BY readiness_score DESC, unlocks_count DESC
             LIMIT $limit
             """
-            
+
             result = session.run(
-                query,
-                student_id=student_id,
-                semester_id=semester_id,
-                min_readiness=min_readiness,
-                limit=limit
+                query, student_id=student_id, semester_id=semester_id, min_readiness=min_readiness, limit=limit
             )
-            
+
             # Get student info
             student_query = """
             MATCH (s:Student {id: $student_id})
@@ -202,49 +189,47 @@ class ModerateQueriesService:
             """
             student_result = session.run(student_query, student_id=student_id)
             student_record = student_result.single()
-            
+
             courses = []
             for record in result:
-                courses.append({
-                    "course_code": record["course_code"],
-                    "course_name": record["course_name"],
-                    "credits": record["credits"] or 3,
-                    "readiness_score": record["readiness_score"],
-                    "prerequisites_missing": record["prerequisites_missing"],
-                    "future_courses_unlocked": record["future_courses_unlocked"],
-                    "status": record["status"]
-                })
-            
+                courses.append(
+                    {
+                        "course_code": record["course_code"],
+                        "course_name": record["course_name"],
+                        "credits": record["credits"] or 3,
+                        "readiness_score": record["readiness_score"],
+                        "prerequisites_missing": record["prerequisites_missing"],
+                        "future_courses_unlocked": record["future_courses_unlocked"],
+                        "status": record["status"],
+                    }
+                )
+
             return {
                 "student_id": student_id,
                 "student_name": student_record["name"] if student_record else None,
                 "program": student_record["program"] if student_record else None,
                 "semester_id": semester_id,
                 "recommendations": courses,
-                "total_recommendations": len(courses)
+                "total_recommendations": len(courses),
             }
-    
-    def get_courses_by_prerequisite_depth(
-        self,
-        student_id: str,
-        limit: int = 20
-    ) -> Dict[str, Any]:
+
+    def get_courses_by_prerequisite_depth(self, student_id: str, limit: int = 20) -> Dict[str, Any]:
         """
         Show remaining courses organized by prerequisite depth.
-        
+
         Helps students see which courses they can take sooner vs later.
-        
+
         Advanced patterns:
         - List comprehension with WHERE filtering
         - Variable-length paths with bounds: *1..5
         - max(length(path)) aggregation
         - Multiple WITH clauses
         - CASE expressions
-        
+
         Args:
             student_id: Student ID
             limit: Maximum courses to return
-            
+
         Returns:
             Dict with courses organized by readiness
         """
@@ -310,9 +295,9 @@ class ModerateQueriesService:
             ORDER BY missing_direct_prereqs ASC, max_depth ASC, course_code
             LIMIT $limit
             """
-            
+
             result = session.run(query, student_id=student_id, limit=limit)
-            
+
             # Get student info
             student_query = """
             MATCH (s:Student {id: $student_id})
@@ -323,15 +308,10 @@ class ModerateQueriesService:
             """
             student_result = session.run(student_query, student_id=student_id)
             student_record = student_result.single()
-            
+
             # Organize courses by recommendation
-            courses_by_status = {
-                "ready_now": [],
-                "almost_ready": [],
-                "plan_soon": [],
-                "plan_later": []
-            }
-            
+            courses_by_status = {"ready_now": [], "almost_ready": [], "plan_soon": [], "plan_later": []}
+
             all_courses = []
             for record in result:
                 course = {
@@ -341,15 +321,15 @@ class ModerateQueriesService:
                     "prerequisites_missing": record["prerequisites_missing"],
                     "chain_depth": record["chain_depth"],
                     "semesters_offered": record["semesters_offered"],
-                    "recommendation": record["recommendation"]
+                    "recommendation": record["recommendation"],
                 }
                 all_courses.append(course)
-                
+
                 # Categorize
                 status = record["recommendation"].lower().replace(" ", "_")
                 if status in courses_by_status:
                     courses_by_status[status].append(course)
-            
+
             return {
                 "student_id": student_id,
                 "student_name": student_record["name"] if student_record else None,
@@ -357,12 +337,13 @@ class ModerateQueriesService:
                 "completed_courses": student_record["completed_count"] if student_record else 0,
                 "courses_by_status": courses_by_status,
                 "all_courses": all_courses,
-                "total_remaining": len(all_courses)
+                "total_remaining": len(all_courses),
             }
 
 
 # Singleton instance
 _moderate_queries_service = None
+
 
 def get_moderate_queries_service() -> ModerateQueriesService:
     """Get or create moderate queries service instance"""
