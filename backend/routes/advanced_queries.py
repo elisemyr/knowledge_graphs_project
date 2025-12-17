@@ -2,8 +2,8 @@
 Advanced Queries API Routes
 Exposes complex Cypher query patterns via REST API
 """
+
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
 from backend.services.advanced_queries_service import get_advanced_queries_service
 
 router = APIRouter(prefix="/api/advanced", tags=["Advanced Queries"])
@@ -27,56 +27,33 @@ router = APIRouter(prefix="/api/advanced", tags=["Advanced Queries"])
     - Variable-length paths: [:PRE_REQUIRES*1..3]
     - Multiple WITH clauses for data transformation
     - Collection and aggregation functions
-    """
+    """,
 )
 async def find_bottleneck_courses(
-    min_dependents: int = Query(
-        3,
-        ge=1,
-        le=20,
-        description="Minimum number of courses this must unlock"
-    ),
-    min_prerequisites: int = Query(
-        2,
-        ge=1,
-        le=10,
-        description="Minimum prerequisites required"
-    ),
-    limit: int = Query(
-        10,
-        ge=1,
-        le=50,
-        description="Maximum results to return"
-    )
+    min_dependents: int = Query(3, ge=1, le=20, description="Minimum number of courses this must unlock"),
+    min_prerequisites: int = Query(2, ge=1, le=10, description="Minimum prerequisites required"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum results to return"),
 ):
     """
     Find courses that are bottlenecks in the curriculum.
-    
+
     Example:
         GET /api/queries/bottleneck-courses?min_dependents=3&min_prerequisites=2&limit=10
     """
     try:
         service = get_advanced_queries_service()
         courses = service.find_bottleneck_courses(
-            min_dependents=min_dependents,
-            min_prerequisites=min_prerequisites,
-            limit=limit
+            min_dependents=min_dependents, min_prerequisites=min_prerequisites, limit=limit
         )
-        
+
         return {
             "bottleneck_courses": courses,
             "total_found": len(courses),
-            "filters": {
-                "min_dependents": min_dependents,
-                "min_prerequisites": min_prerequisites
-            }
+            "filters": {"min_dependents": min_dependents, "min_prerequisites": min_prerequisites},
         }
-        
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error finding bottleneck courses: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error finding bottleneck courses: {str(e)}")
 
 
 @router.get(
@@ -96,49 +73,30 @@ async def find_bottleneck_courses(
     - List comprehension with WHERE filtering
     - Complex CASE expressions for scoring
     - Computed metrics and filtering
-    """
+    """,
 )
 async def get_course_recommendations(
     student_id: str,
-    semester_id: str = Query(
-        "FALL_2024",
-        description="Target semester ID (e.g., 'FALL_2024', 'SPRING_2025')"
-    ),
-    min_readiness: int = Query(
-        75,
-        ge=0,
-        le=100,
-        description="Minimum readiness score (0-100)"
-    ),
-    limit: int = Query(
-        15,
-        ge=1,
-        le=50,
-        description="Maximum recommendations to return"
-    )
+    semester_id: str = Query("FALL_2024", description="Target semester ID (e.g., 'FALL_2024', 'SPRING_2025')"),
+    min_readiness: int = Query(75, ge=0, le=100, description="Minimum readiness score (0-100)"),
+    limit: int = Query(15, ge=1, le=50, description="Maximum recommendations to return"),
 ):
     """
     Get personalized course recommendations with readiness scores.
-    
+
     Example:
         GET /api/queries/students/S001/recommendations?semester_id=FALL_2024&min_readiness=75
     """
     try:
         service = get_advanced_queries_service()
         result = service.get_course_recommendations(
-            student_id=student_id,
-            semester_id=semester_id,
-            min_readiness=min_readiness,
-            limit=limit
+            student_id=student_id, semester_id=semester_id, min_readiness=min_readiness, limit=limit
         )
-        
+
         return result
-        
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error getting recommendations: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error getting recommendations: {str(e)}")
 
 
 @router.get(
@@ -161,37 +119,25 @@ async def get_course_recommendations(
     - max(length(path)) for depth calculation
     - Multiple WITH clauses
     - CASE expressions for categorization
-    """
+    """,
 )
 async def get_courses_by_depth(
-    student_id: str,
-    limit: int = Query(
-        20,
-        ge=1,
-        le=100,
-        description="Maximum courses to return"
-    )
+    student_id: str, limit: int = Query(20, ge=1, le=100, description="Maximum courses to return")
 ):
     """
     Get remaining courses organized by prerequisite depth.
-    
+
     Example:
         GET /api/queries/students/S001/course-depth?limit=20
     """
     try:
         service = get_advanced_queries_service()
-        result = service.get_courses_by_prerequisite_depth(
-            student_id=student_id,
-            limit=limit
-        )
-        
+        result = service.get_courses_by_prerequisite_depth(student_id=student_id, limit=limit)
+
         return result
-        
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error analyzing course depth: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error analyzing course depth: {str(e)}")
 
 
 @router.get(
@@ -204,35 +150,26 @@ async def get_courses_by_depth(
     - Course recommendations for next semester
     - Courses organized by readiness
     - Overall progress metrics
-    """
+    """,
 )
-async def get_student_summary(
-    student_id: str,
-    semester_id: str = Query("FALL_2024", description="Target semester")
-):
+async def get_student_summary(student_id: str, semester_id: str = Query("FALL_2024", description="Target semester")):
     """
     Get comprehensive summary combining all analysis.
-    
+
     Example:
         GET /api/queries/students/S001/summary?semester_id=FALL_2024
     """
     try:
         service = get_advanced_queries_service()
-        
+
         # Get recommendations
         recommendations = service.get_course_recommendations(
-            student_id=student_id,
-            semester_id=semester_id,
-            min_readiness=75,
-            limit=10
+            student_id=student_id, semester_id=semester_id, min_readiness=75, limit=10
         )
-        
+
         # Get course depth analysis
-        depth_analysis = service.get_courses_by_prerequisite_depth(
-            student_id=student_id,
-            limit=20
-        )
-        
+        depth_analysis = service.get_courses_by_prerequisite_depth(student_id=student_id, limit=20)
+
         return {
             "student_id": student_id,
             "student_name": recommendations.get("student_name"),
@@ -241,16 +178,13 @@ async def get_student_summary(
             "next_semester": {
                 "semester_id": semester_id,
                 "recommendations": recommendations.get("recommendations", []),
-                "total_recommended": recommendations.get("total_recommendations", 0)
+                "total_recommended": recommendations.get("total_recommendations", 0),
             },
             "remaining_courses": {
                 "by_status": depth_analysis.get("courses_by_status", {}),
-                "total_remaining": depth_analysis.get("total_remaining", 0)
-            }
+                "total_remaining": depth_analysis.get("total_remaining", 0),
+            },
         }
-        
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error generating student summary: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error generating student summary: {str(e)}")

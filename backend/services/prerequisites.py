@@ -1,4 +1,3 @@
-
 from typing import Dict, List
 from backend.database.neo4j import get_neo4j_client
 
@@ -48,7 +47,7 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict:
     check if a student can take a course
     """
     client = get_neo4j_client()
-    
+
     # get all prerequisites for the course
     query = """
     MATCH (target:Course {code: $course_code})
@@ -61,9 +60,9 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict:
     
     RETURN target.code AS course, required, completed, s IS NOT NULL AS student_exists
     """
-    
+
     results = client.query(query, {"student_id": student_id, "course_code": course_code}, read_only=True)
-    
+
     if not results:
         return {
             "student_id": student_id,
@@ -74,11 +73,11 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict:
             "can_take": False,
             "reason": "course_not_found",
         }
-    
+
     row = results[0]
     required = row.get("required") or []
     completed = row.get("completed") or []
-    
+
     if not row.get("student_exists", False):
         return {
             "student_id": student_id,
@@ -89,9 +88,9 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict:
             "can_take": False,
             "reason": "student_not_found",
         }
-    
+
     missing = sorted(list(set(required) - set(completed)))
-    
+
     return {
         "student_id": student_id,
         "course": row["course"],
@@ -109,12 +108,12 @@ def validate_prerequisites_for_course(target_course: str, completed_courses: Lis
     """
     # prerequisites needed
     all_prereqs = get_all_prerequisites(target_course)
-    
+
     # find what's missing
     required_set = set(all_prereqs)
     completed_set = set(completed_courses)
     missing = sorted(list(required_set - completed_set))
-    
+
     return {
         "course": target_course,
         "can_take": len(missing) == 0,

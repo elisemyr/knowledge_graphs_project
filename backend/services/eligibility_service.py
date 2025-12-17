@@ -21,28 +21,16 @@ class EligibilityService:
         results = self.client.query(query, {"student_id": student_id}, read_only=True)
         return [r["code"] for r in results]
 
-    def compute_missing_prerequisites(
-        self,
-        course_prereqs: List[str],
-        completed_courses: List[str]
-    ) -> List[str]:
+    def compute_missing_prerequisites(self, course_prereqs: List[str], completed_courses: List[str]) -> List[str]:
         """
         Returns a list of prerequisites the student has NOT completed.
         """
         return [pr for pr in course_prereqs if pr not in completed_courses]
 
-    def create_eligibility_response(
-        self,
-        student_id: str,
-        course_id: str,
-        missing: List[str]
-    ) -> EligibilityResponse:
+    def create_eligibility_response(self, student_id: str, course_id: str, missing: List[str]) -> EligibilityResponse:
         """
         Build the structured response model.
         """
         return EligibilityResponse(
-            student_id=student_id,
-            course_id=course_id,
-            eligible=(len(missing) == 0),
-            missing_prerequisites=missing
+            student_id=student_id, course_id=course_id, eligible=(len(missing) == 0), missing_prerequisites=missing
         )
