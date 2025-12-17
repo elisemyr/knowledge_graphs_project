@@ -1,17 +1,60 @@
-version: "3.9"
-
-# services:
-#   neo4j:
-#     image: neo4j:5
-#     container_name: neo4j
-#     ports:
-#       - "7474:7474"
-#       - "7687:7687"
+services:
+  neo4j:
+    image: docker.io/library/neo4j:5
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
     environment:
-      NEO4J_AUTH: neo4j/password
+      NEO4J_AUTH: "neo4j/password"
       NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
-    volumes:
-      - neo4j_data:/data
-
-volumes:
-  neo4j_data:
+      HEALTHCHECK_USER: "neo4j"
+      HEALTHCHECK_PASSWORD: "password"
+    #volumes:
+    #  - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u $${HEALTHCHECK_USER} -p $${HEALTHCHECK_PASSWORD} 'RETURN 1'"]
+      interval: 10s
+      retries: 2
+      start_period: 30s
+      timeout: 10s
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      neo4j:
+        condition: service_healthy
+        restart: true
+    image: "${REPO}/${TAG}"
+    container_name: seed
+    command: python3 scripts/seed_data.py
+    environment:
+      NEO4J_URI: "${NEO4J_URI:-bolt://neo4j:7687}"
+      NEO4J_USER: "${NEO4J_USER:-neo4j}"
+      NEO4J_PASSWORD: "${NEO4J_PASSWORD:-password}"
+      NEO4J_DATABASE: "${NEO4J_DATABASE:-neo4j}"
+  kgfx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    image: "${REPO}/${TAG}"
+    container_name: kgfx
+    environment:
+      NEO4J_URI: "${NEO4J_URI:-bolt://neo4j:7687}"
+      NEO4J_USER: "${NEO4J_USER:-neo4j}"
+      NEO4J_PASSWORD: "${NEO4J_PASSWORD:-password}"
+      NEO4J_DATABASE: "${NEO4J_DATABASE:-neo4j}"
+    ports:
+      - "${GRAPH_API_PORT}:${GRAPH_API_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8001/health"]
+      interval: 10s
+      retries: 2
+      start_period: 30s
+      timeout: 10s
+#volumes:
+#  neo4j_data: /data
