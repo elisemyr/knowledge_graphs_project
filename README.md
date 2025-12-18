@@ -232,6 +232,11 @@ These algorithms provide insights into curriculum structure, course importance, 
 All GDS-related Cypher queries are stored in the `scripts/gds/` directory.
 
 ---
+## Architecture
+
+The project follows a layered architecture separating API routing, business logic, and graph persistence.
+
+![Architecture Diagram](docs/architecture_diagram.png)
 
 # Status for the moment 
 
