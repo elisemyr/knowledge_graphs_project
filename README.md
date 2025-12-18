@@ -1,3 +1,7 @@
+
+[![Tests](https://github.com/elisemyr/knowledge_graphs_project/actions/workflows/tests.yml/badge.svg)](https://github.com/elisemyr/knowledge_graphs_project/actions/workflows/tests.yml)
+[![Lint](https://github.com/elisemyr/knowledge_graphs_project/actions/workflows/lint.yml/badge.svg)](https://github.com/elisemyr/knowledge_graphs_project/actions/workflows/lint.yml)
+
 # University Course Prerequisite Planner
 
 This project builds a graph of university courses and their prerequisites using Neo4j and exposes several useful FastAPI endpoints to explore the graph, detect cycles, and validate student eligibility for a course.
