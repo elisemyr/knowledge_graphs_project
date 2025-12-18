@@ -14,6 +14,20 @@ from backend.routes import schedule_optimizer
 app = FastAPI(title="Course Prerequisite Planner")
 
 
+# root endpoint
+@app.get("/")
+def root():
+    """
+    Root endpoint providing API information.
+    """
+    return {
+        "message": "Course Prerequisite Planner API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+
 # health check
 
 @app.get("/health")
