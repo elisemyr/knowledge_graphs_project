@@ -713,18 +713,3 @@ make docker-compose-down # Stop Docker Compose
 
 ---
 
-## License
-
-[Add your license information here]
-
-## Contributing
-
-[Add contributing guidelines here]
-
-## Contact
-
-[Add contact information here]
-
----
-
-**Built with ❤️ using Neo4j and FastAPI**
