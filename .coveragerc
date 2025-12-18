@@ -1,0 +1,6 @@
+[run]
+source = backend
+omit =
+    tests/test_app.py
+    tests/test_schedule_optimizer.py
+
