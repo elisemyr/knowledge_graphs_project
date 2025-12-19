@@ -30,4 +30,4 @@ async def get_graduation_paths(student_id: str) -> Dict:
     try:
         return generate_graduation_paths(student_id)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

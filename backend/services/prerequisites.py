@@ -75,7 +75,9 @@ def detect_cycles(limit: int = 20) -> List[Dict[str, Union[str, int, List[str]]]
     return results
 
 
-def check_student_can_take(student_id: str, course_code: str) -> Dict[str, Union[str, List[str], bool]]:
+def check_student_can_take(
+    student_id: str, course_code: str
+) -> Dict[str, Union[str, List[str], bool]]:
     """
     Check if a student can take a course based on completed prerequisites.
 
@@ -91,7 +93,8 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict[str, Union
         - completed: List of completed course codes
         - missing: List of missing prerequisite course codes
         - can_take: Boolean indicating if student can take the course
-        - reason: Reason code ("ok", "course_not_found", "student_not_found", "missing_prerequisites")
+        - reason: Reason code ("ok", "course_not_found",
+          "student_not_found", "missing_prerequisites")
     """
     client = get_neo4j_client()
 
@@ -108,7 +111,9 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict[str, Union
     RETURN target.code AS course, required, completed, s IS NOT NULL AS student_exists
     """
 
-    results = client.query(query, {"student_id": student_id, "course_code": course_code}, read_only=True)
+    results = client.query(
+        query, {"student_id": student_id, "course_code": course_code}, read_only=True
+    )
 
     if not results:
         return {
@@ -149,7 +154,9 @@ def check_student_can_take(student_id: str, course_code: str) -> Dict[str, Union
     }
 
 
-def validate_prerequisites_for_course(target_course: str, completed_courses: List[str]) -> Dict[str, Union[str, bool, List[str]]]:
+def validate_prerequisites_for_course(
+    target_course: str, completed_courses: List[str]
+) -> Dict[str, Union[str, bool, List[str]]]:
     """
     Check if a list of completed courses satisfies all prerequisites for a target course.
 

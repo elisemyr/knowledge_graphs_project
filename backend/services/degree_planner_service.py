@@ -82,7 +82,7 @@ def degree_topological_sort(courses: List[str]) -> Optional[List[List[str]]]:
 
     while remaining:
         # Find courses whose prerequisites are not still missing
-        available = [c for c in remaining if not (graph[c] & remaining)]
+        available = [c for c in remaining if not graph[c] & remaining]
 
         if not available:
             return None  # Cycle detected
@@ -93,7 +93,9 @@ def degree_topological_sort(courses: List[str]) -> Optional[List[List[str]]]:
     return sequence
 
 
-def plan_degree(student_id: str, degree_id: str) -> Dict[str, Union[str, List[str], Optional[List[List[str]]]]]:
+def plan_degree(
+    student_id: str, degree_id: str
+) -> Dict[str, Union[str, List[str], Optional[List[List[str]]]]]:
     """
     Generate a degree completion plan for a student.
 
@@ -119,7 +121,7 @@ def plan_degree(student_id: str, degree_id: str) -> Dict[str, Union[str, List[st
             "student_id": student_id,
             "degree_id": degree_id,
             "remaining_courses": [],
-            "recommended_sequence": []
+            "recommended_sequence": [],
         }
 
     ordered = degree_topological_sort(missing)

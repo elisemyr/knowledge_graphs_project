@@ -21,8 +21,7 @@ eligibility_service = EligibilityService()
 
 @router.get("/{student_id}/eligibility", response_model=EligibilityResponse)
 def check_eligibility(
-    student_id: str,
-    course_id: str = Query(..., description="Course to check eligibility for")
+    student_id: str, course_id: str = Query(..., description="Course to check eligibility for")
 ) -> EligibilityResponse:
     """
     Check if a student is eligible to take a course.

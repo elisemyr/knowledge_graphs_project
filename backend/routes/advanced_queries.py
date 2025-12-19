@@ -4,7 +4,7 @@ Exposes complex Cypher query patterns via REST API
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from backend.services.advanced_queries_service import get_advanced_queries_service
+from backend.services.advanced_queries_service import get_moderate_queries_service
 
 router = APIRouter(prefix="/api/advanced", tags=["Advanced Queries"])
 
@@ -30,7 +30,9 @@ router = APIRouter(prefix="/api/advanced", tags=["Advanced Queries"])
     """,
 )
 async def find_bottleneck_courses(
-    min_dependents: int = Query(3, ge=1, le=20, description="Minimum number of courses this must unlock"),
+    min_dependents: int = Query(
+        3, ge=1, le=20, description="Minimum number of courses this must unlock"
+    ),
     min_prerequisites: int = Query(2, ge=1, le=10, description="Minimum prerequisites required"),
     limit: int = Query(10, ge=1, le=50, description="Maximum results to return"),
 ):
@@ -41,7 +43,7 @@ async def find_bottleneck_courses(
         GET /api/queries/bottleneck-courses?min_dependents=3&min_prerequisites=2&limit=10
     """
     try:
-        service = get_advanced_queries_service()
+        service = get_moderate_queries_service()
         courses = service.find_bottleneck_courses(
             min_dependents=min_dependents, min_prerequisites=min_prerequisites, limit=limit
         )
@@ -53,7 +55,9 @@ async def find_bottleneck_courses(
         }
 
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Error finding bottleneck courses: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error finding bottleneck courses: {str(exc)}"
+        ) from exc
 
 
 @router.get(
@@ -77,7 +81,9 @@ async def find_bottleneck_courses(
 )
 async def get_course_recommendations(
     student_id: str,
-    semester_id: str = Query("FALL_2024", description="Target semester ID (e.g., 'FALL_2024', 'SPRING_2025')"),
+    semester_id: str = Query(
+        "FALL_2024", description="Target semester ID (e.g., 'FALL_2024', 'SPRING_2025')"
+    ),
     min_readiness: int = Query(75, ge=0, le=100, description="Minimum readiness score (0-100)"),
     limit: int = Query(15, ge=1, le=50, description="Maximum recommendations to return"),
 ):
@@ -88,7 +94,7 @@ async def get_course_recommendations(
         GET /api/queries/students/S001/recommendations?semester_id=FALL_2024&min_readiness=75
     """
     try:
-        service = get_advanced_queries_service()
+        service = get_moderate_queries_service()
         result = service.get_course_recommendations(
             student_id=student_id, semester_id=semester_id, min_readiness=min_readiness, limit=limit
         )
@@ -96,7 +102,9 @@ async def get_course_recommendations(
         return result
 
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Error getting recommendations: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting recommendations: {str(exc)}"
+        ) from exc
 
 
 @router.get(
@@ -131,13 +139,15 @@ async def get_courses_by_depth(
         GET /api/queries/students/S001/course-depth?limit=20
     """
     try:
-        service = get_advanced_queries_service()
+        service = get_moderate_queries_service()
         result = service.get_courses_by_prerequisite_depth(student_id=student_id, limit=limit)
 
         return result
 
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Error analyzing course depth: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error analyzing course depth: {str(exc)}"
+        ) from exc
 
 
 @router.get(
@@ -152,7 +162,9 @@ async def get_courses_by_depth(
     - Overall progress metrics
     """,
 )
-async def get_student_summary(student_id: str, semester_id: str = Query("FALL_2024", description="Target semester")):
+async def get_student_summary(
+    student_id: str, semester_id: str = Query("FALL_2024", description="Target semester")
+):
     """
     Get comprehensive summary combining all analysis.
 
@@ -160,7 +172,7 @@ async def get_student_summary(student_id: str, semester_id: str = Query("FALL_20
         GET /api/queries/students/S001/summary?semester_id=FALL_2024
     """
     try:
-        service = get_advanced_queries_service()
+        service = get_moderate_queries_service()
 
         # Get recommendations
         recommendations = service.get_course_recommendations(
@@ -187,4 +199,6 @@ async def get_student_summary(student_id: str, semester_id: str = Query("FALL_20
         }
 
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Error generating student summary: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error generating student summary: {str(exc)}"
+        ) from exc

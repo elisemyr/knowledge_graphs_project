@@ -37,7 +37,9 @@ class EligibilityService:
         results = self.client.query(query, {"student_id": student_id}, read_only=True)
         return [r["code"] for r in results]
 
-    def compute_missing_prerequisites(self, course_prereqs: List[str], completed_courses: List[str]) -> List[str]:
+    def compute_missing_prerequisites(
+        self, course_prereqs: List[str], completed_courses: List[str]
+    ) -> List[str]:
         """
         Compute which prerequisites the student has NOT completed.
 
@@ -68,5 +70,5 @@ class EligibilityService:
             student_id=student_id,
             course_id=course_id,
             eligible=(len(missing) == 0),
-            missing_prerequisites=missing
+            missing_prerequisites=missing,
         )

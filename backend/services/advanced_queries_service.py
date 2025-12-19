@@ -83,7 +83,12 @@ class ModerateQueriesService:
             LIMIT $limit
             """
 
-            result = session.run(query, min_dependents=min_dependents, min_prerequisites=min_prerequisites, limit=limit)
+            result = session.run(
+                query,
+                min_dependents=min_dependents,
+                min_prerequisites=min_prerequisites,
+                limit=limit,
+            )
 
             courses = []
             for record in result:
@@ -95,14 +100,21 @@ class ModerateQueriesService:
                         "courses_unlocked": record["courses_unlocked"],
                         "semesters_offered": record["semesters_offered"],
                         "sample_semesters": record["sample_semesters"],
-                        "bottleneck_score": record["courses_unlocked"] * 2 + record["prerequisites_needed"],
+                        "bottleneck_score": (
+                            record["courses_unlocked"] * 2
+                            + record["prerequisites_needed"]
+                        ),
                     }
                 )
 
             return courses
 
     def get_course_recommendations(
-        self, student_id: str, semester_id: str, min_readiness: int = 75, limit: int = 15
+        self,
+        student_id: str,
+        semester_id: str,
+        min_readiness: int = 75,
+        limit: int = 15,
     ) -> Dict[str, Any]:
         """
         Get personalized course recommendations for a student for a specific semester.
@@ -189,7 +201,11 @@ class ModerateQueriesService:
             """
 
             result = session.run(
-                query, student_id=student_id, semester_id=semester_id, min_readiness=min_readiness, limit=limit
+                query,
+                student_id=student_id,
+                semester_id=semester_id,
+                min_readiness=min_readiness,
+                limit=limit,
             )
 
             # Get student info
@@ -306,7 +322,9 @@ class ModerateQueriesService:
             LIMIT $limit
             """
 
-            result = session.run(query, student_id=student_id, limit=limit)
+            result = session.run(
+                query, student_id=student_id, limit=limit
+            )
 
             # Get student info
             student_query = """
@@ -320,7 +338,12 @@ class ModerateQueriesService:
             student_record = student_result.single()
 
             # Organize courses by recommendation
-            courses_by_status = {"ready_now": [], "almost_ready": [], "plan_soon": [], "plan_later": []}
+            courses_by_status = {
+                "ready_now": [],
+                "almost_ready": [],
+                "plan_soon": [],
+                "plan_later": [],
+            }
 
             all_courses = []
             for record in result:
@@ -352,12 +375,13 @@ class ModerateQueriesService:
 
 
 # Singleton instance
-_moderate_queries_service = None
+_MODERATE_QUERIES_SERVICE = None
 
 
 def get_moderate_queries_service() -> ModerateQueriesService:
     """Get or create moderate queries service instance"""
-    global _moderate_queries_service
-    if _moderate_queries_service is None:
-        _moderate_queries_service = ModerateQueriesService()
-    return _moderate_queries_service
+    # pylint: disable=global-statement
+    global _MODERATE_QUERIES_SERVICE
+    if _MODERATE_QUERIES_SERVICE is None:
+        _MODERATE_QUERIES_SERVICE = ModerateQueriesService()
+    return _MODERATE_QUERIES_SERVICE

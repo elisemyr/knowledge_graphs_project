@@ -6,9 +6,15 @@ Uses topological sorting and semester constraints to create optimal course sched
 from typing import Any, List, Dict, Set, Union
 from collections import defaultdict, deque
 from backend.database.neo4j import get_neo4j_client
-from backend.models.schedule import OptimizedScheduleResponse, SemesterSchedule, CourseInSchedule, ScheduleConstraints
+from backend.models.schedule import (
+    OptimizedScheduleResponse,
+    SemesterSchedule,
+    CourseInSchedule,
+    ScheduleConstraints,
+)
 
 
+# pylint: disable=too-few-public-methods
 class ScheduleOptimizerService:
     """
     Service for optimizing student course schedules.
@@ -26,7 +32,9 @@ class ScheduleOptimizerService:
         """
         self.driver = get_neo4j_client()
 
-    def optimize_schedule(self, student_id: str, constraints: ScheduleConstraints) -> OptimizedScheduleResponse:
+    def optimize_schedule(
+        self, student_id: str, constraints: ScheduleConstraints
+    ) -> OptimizedScheduleResponse:
         """
         Create an optimized course schedule for a student
 
@@ -46,7 +54,11 @@ class ScheduleOptimizerService:
             all_courses = self._get_all_courses_with_prereqs(session)
 
             # 3. Filter out completed courses
-            remaining_courses = {code: data for code, data in all_courses.items() if code not in completed_courses}
+            remaining_courses = {
+                code: data
+                for code, data in all_courses.items()
+                if code not in completed_courses
+            }
 
             # 4. Get semester offerings
             semester_offerings = self._get_semester_offerings(
@@ -57,17 +69,25 @@ class ScheduleOptimizerService:
             prereq_graph = self._build_prereq_graph(remaining_courses, completed_courses)
 
             # 6. Topologically sort courses
-            sorted_courses = self._topological_sort(prereq_graph, remaining_courses, completed_courses)
+            sorted_courses = self._topological_sort(
+                prereq_graph, remaining_courses, completed_courses
+            )
 
             # 7. Assign courses to semesters
             schedule = self._assign_courses_to_semesters(
-                sorted_courses, remaining_courses, semester_offerings, constraints, completed_courses
+                sorted_courses,
+                remaining_courses,
+                semester_offerings,
+                constraints,
+                completed_courses,
             )
 
             # 8. Build response
             return self._build_response(student_id, student_info, schedule, completed_courses)
 
-    def _get_student_info(self, session: Any, student_id: str) -> Dict[str, Union[str, List[str], None]]:
+    def _get_student_info(
+        self, session: Any, student_id: str
+    ) -> Dict[str, Union[str, List[str], None]]:
         """
         Get student information and completed courses.
 
@@ -97,7 +117,9 @@ class ScheduleOptimizerService:
             "completed": [c for c in record["completed"] if c],
         }
 
-    def _get_all_courses_with_prereqs(self, session: Any) -> Dict[str, Dict[str, Union[str, int, List[str]]]]:
+    def _get_all_courses_with_prereqs(
+        self, session: Any
+    ) -> Dict[str, Dict[str, Union[str, int, List[str]]]]:
         """
         Get all courses with their prerequisites and metadata.
 
@@ -127,7 +149,9 @@ class ScheduleOptimizerService:
 
         return courses
 
-    def _get_semester_offerings(self, session: Any, start_semester: str, num_semesters: int) -> List[Dict[str, Union[str, int]]]:
+    def _get_semester_offerings(
+        self, session: Any, start_semester: str, num_semesters: int
+    ) -> List[Dict[str, Union[str, int]]]:
         """
         Get ordered list of semesters with course offerings.
 
@@ -153,7 +177,9 @@ class ScheduleOptimizerService:
         ORDER BY s.order
         LIMIT $num_semesters
         """
-        result = session.run(query, start_semester=start_semester, num_semesters=num_semesters)
+        result = session.run(
+            query, start_semester=start_semester, num_semesters=num_semesters
+        )
 
         semesters = []
         for record in result:
@@ -170,7 +196,9 @@ class ScheduleOptimizerService:
 
         return semesters
 
-    def _build_prereq_graph(self, courses: Dict[str, Dict], completed: List[str]) -> Dict[str, Set[str]]:
+    def _build_prereq_graph(
+        self, courses: Dict[str, Dict], completed: List[str]
+    ) -> Dict[str, Set[str]]:
         """
         Build prerequisite dependency graph.
 
@@ -187,7 +215,9 @@ class ScheduleOptimizerService:
             prereqs = course_data["prerequisites"]
 
             # Filter prerequisites to only include uncompleted ones
-            uncompleted_prereqs = [p for p in prereqs if p not in completed and p in courses]
+            uncompleted_prereqs = [
+                p for p in prereqs if p not in completed and p in courses
+            ]
 
             # Add edges: prereq -> course
             for prereq in uncompleted_prereqs:
@@ -200,7 +230,10 @@ class ScheduleOptimizerService:
         return graph
 
     def _topological_sort(
-        self, graph: Dict[str, Set[str]], courses: Dict[str, Dict], completed: List[str]
+        self,
+        graph: Dict[str, Set[str]],
+        courses: Dict[str, Dict],
+        completed: List[str],
     ) -> List[str]:
         """
         Topological sort using Kahn's algorithm.
@@ -218,7 +251,9 @@ class ScheduleOptimizerService:
         for course_code in courses.keys():
             prereqs = courses[course_code]["prerequisites"]
             # Only count uncompleted prerequisites
-            uncompleted_prereqs = [p for p in prereqs if p not in completed and p in courses]
+            uncompleted_prereqs = [
+                p for p in prereqs if p not in completed and p in courses
+            ]
             in_degree[course_code] = len(uncompleted_prereqs)
 
         # Queue of courses with no prerequisites
@@ -245,6 +280,7 @@ class ScheduleOptimizerService:
 
         return sorted_courses
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     def _assign_courses_to_semesters(
         self,
         sorted_courses: List[str],
@@ -297,20 +333,20 @@ class ScheduleOptimizerService:
                     break
 
                 course_data = courses[course_code]
-                credits = course_data["credits"]
+                course_credits = course_data["credits"]
 
-                if semester_credits + credits > constraints.max_credits_per_semester:
+                if semester_credits + course_credits > constraints.max_credits_per_semester:
                     continue
 
                 semester_courses.append(
                     CourseInSchedule(
                         course_code=course_code,
                         course_name=course_data["name"],
-                        credits=credits,
+                        credits=course_credits,
                         prerequisites=course_data["prerequisites"],
                     )
                 )
-                semester_credits += credits
+                semester_credits += course_credits
                 courses_taken.add(course_code)
 
             # Create semester schedule
@@ -329,7 +365,11 @@ class ScheduleOptimizerService:
         return schedule
 
     def _build_response(
-        self, student_id: str, student_info: Dict, schedule: List[SemesterSchedule], completed: List[str]
+        self,
+        student_id: str,
+        student_info: Dict,
+        schedule: List[SemesterSchedule],
+        completed: List[str],
     ) -> OptimizedScheduleResponse:
         """
         Build the final optimized schedule response.
@@ -367,12 +407,13 @@ class ScheduleOptimizerService:
 
 
 # Singleton instance
-_schedule_optimizer_service = None
+_SCHEDULE_OPTIMIZER_SERVICE = None
 
 
 def get_schedule_optimizer_service() -> ScheduleOptimizerService:
     """Get or create schedule optimizer service instance"""
-    global _schedule_optimizer_service
-    if _schedule_optimizer_service is None:
-        _schedule_optimizer_service = ScheduleOptimizerService()
-    return _schedule_optimizer_service
+    # pylint: disable=global-statement
+    global _SCHEDULE_OPTIMIZER_SERVICE
+    if _SCHEDULE_OPTIMIZER_SERVICE is None:
+        _SCHEDULE_OPTIMIZER_SERVICE = ScheduleOptimizerService()
+    return _SCHEDULE_OPTIMIZER_SERVICE

@@ -3,6 +3,7 @@ Schedule Optimization API Routes
 """
 
 from fastapi import APIRouter, HTTPException, Query
+from backend.database.neo4j import get_neo4j_driver
 from backend.models.schedule import OptimizedScheduleResponse, ScheduleConstraints
 from backend.services.schedule_optimizer_service import get_schedule_optimizer_service
 
@@ -26,10 +27,18 @@ router = APIRouter(prefix="/api/students", tags=["Schedule Optimization"])
 )
 async def optimize_schedule(
     student_id: str,
-    max_courses_per_semester: int = Query(5, ge=1, le=8, description="Maximum number of courses per semester"),
-    max_credits_per_semester: int = Query(18, ge=6, le=24, description="Maximum credit hours per semester"),
-    target_semesters: int = Query(8, ge=1, le=12, description="Number of semesters to plan for"),
-    start_semester: str = Query("FALL_2024", description="Starting semester ID (e.g., 'FALL_2024')"),
+    max_courses_per_semester: int = Query(
+        5, ge=1, le=8, description="Maximum number of courses per semester"
+    ),
+    max_credits_per_semester: int = Query(
+        18, ge=6, le=24, description="Maximum credit hours per semester"
+    ),
+    target_semesters: int = Query(
+        8, ge=1, le=12, description="Number of semesters to plan for"
+    ),
+    start_semester: str = Query(
+        "FALL_2024", description="Starting semester ID (e.g., 'FALL_2024')"
+    ),
 ) -> OptimizedScheduleResponse:
     """
     Optimize course schedule for a student
@@ -53,7 +62,9 @@ async def optimize_schedule(
         return result
 
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Error optimizing schedule: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error optimizing schedule: {str(exc)}"
+        ) from exc
 
 
 @router.get(
@@ -73,8 +84,6 @@ async def get_available_semesters(
         GET /api/students/S001/schedule/semesters?limit=8
     """
     try:
-        from backend.database.neo4j import get_neo4j_driver
-
         driver = get_neo4j_driver()
 
         with driver.session() as session:
@@ -108,4 +117,6 @@ async def get_available_semesters(
             return {"student_id": student_id, "semesters": semesters, "total": len(semesters)}
 
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Error fetching semesters: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching semesters: {str(exc)}"
+        ) from exc

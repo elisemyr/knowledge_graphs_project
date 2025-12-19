@@ -71,7 +71,9 @@ def all_topological_orders(graph: Dict[str, Set[str]]) -> List[List[str]]:
     return results
 
 
-def generate_graduation_paths(student_id: str) -> Dict[str, Union[str, List[str], List[List[str]]]]:
+def generate_graduation_paths(
+    student_id: str
+) -> Dict[str, Union[str, List[str], List[List[str]]]]:
     """
     Generate all possible graduation paths for a student.
 
@@ -107,11 +109,7 @@ def generate_graduation_paths(student_id: str) -> Dict[str, Union[str, List[str]
     missing = sorted(required - completed)
 
     if not missing:
-        return {
-            "student_id": student_id,
-            "degree_id": degree_id,
-            "paths": [["Already graduated"]]
-        }
+        return {"student_id": student_id, "degree_id": degree_id, "paths": [["Already graduated"]]}
 
     # Build dependency graph
     graph = build_graph(missing)
@@ -123,5 +121,5 @@ def generate_graduation_paths(student_id: str) -> Dict[str, Union[str, List[str]
         "student_id": student_id,
         "degree_id": degree_id,
         "missing_courses": missing,
-        "paths": paths
+        "paths": paths,
     }
