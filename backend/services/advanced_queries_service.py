@@ -8,9 +8,19 @@ from backend.database.neo4j import get_neo4j_driver
 
 
 class ModerateQueriesService:
-    """Service for moderate complexity queries with practical school applications"""
+    """
+    Service for moderate complexity queries with practical school applications.
 
-    def __init__(self):
+    Provides advanced Cypher query patterns for bottleneck detection,
+    course recommendations, and student progress analysis.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialize the moderate queries service.
+
+        Creates a Neo4j driver connection for executing complex queries.
+        """
         self.driver = get_neo4j_driver()
 
     def find_bottleneck_courses(

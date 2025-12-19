@@ -52,8 +52,8 @@ async def find_bottleneck_courses(
             "filters": {"min_dependents": min_dependents, "min_prerequisites": min_prerequisites},
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error finding bottleneck courses: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error finding bottleneck courses: {str(exc)}")
 
 
 @router.get(
@@ -95,8 +95,8 @@ async def get_course_recommendations(
 
         return result
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting recommendations: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error getting recommendations: {str(exc)}")
 
 
 @router.get(
@@ -136,8 +136,8 @@ async def get_courses_by_depth(
 
         return result
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error analyzing course depth: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error analyzing course depth: {str(exc)}")
 
 
 @router.get(
@@ -186,5 +186,5 @@ async def get_student_summary(student_id: str, semester_id: str = Query("FALL_20
             },
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating student summary: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error generating student summary: {str(exc)}")

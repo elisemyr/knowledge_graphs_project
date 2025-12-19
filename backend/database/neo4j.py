@@ -54,6 +54,20 @@ class Neo4jClient:
         if self._driver is not None:
             self._driver.close()
 
+    def session(self, **kwargs) -> Session:
+        """
+        Create a new session.
+
+        Args:
+            **kwargs: Optional keyword arguments passed to driver.session().
+
+        Returns:
+            A Neo4j session bound to the configured database (if any).
+        """
+        if self._database:
+            return self._driver.session(database=self._database, **kwargs)
+        return self._driver.session(**kwargs)
+
     def _get_session(self) -> Session:
         """
         Create a new session.
@@ -122,3 +136,26 @@ def get_neo4j_client() -> Neo4jClient:
     database = os.getenv("NEO4J_DATABASE", "neo4j")
 
     return Neo4jClient(uri=uri, user=user, password=password, database=database)
+
+
+@lru_cache(maxsize=1)
+def get_neo4j_driver() -> Driver:
+    """
+    Factory for a singleton Neo4j Driver.
+
+    This function provides direct access to the Neo4j driver for services
+    that need to use sessions directly (e.g., for GDS operations).
+
+    Values are read from environment variables:
+        NEO4J_URI
+        NEO4J_USER
+        NEO4J_PASSWORD
+
+    Returns:
+        A cached Neo4j Driver instance.
+    """
+    uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+    user = os.getenv("NEO4J_USER", "neo4j")
+    password = os.getenv("NEO4J_PASSWORD", "password")
+
+    return GraphDatabase.driver(uri, auth=(user, password))

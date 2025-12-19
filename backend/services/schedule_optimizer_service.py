@@ -3,16 +3,27 @@ Schedule Optimization Service
 Uses topological sorting and semester constraints to create optimal course schedules
 """
 
-from typing import List, Dict, Set
+from typing import Any, List, Dict, Set, Union
 from collections import defaultdict, deque
 from backend.database.neo4j import get_neo4j_client
 from backend.models.schedule import OptimizedScheduleResponse, SemesterSchedule, CourseInSchedule, ScheduleConstraints
 
 
 class ScheduleOptimizerService:
-    """Service for optimizing student course schedules"""
+    """
+    Service for optimizing student course schedules.
 
-    def __init__(self):
+    Uses topological sorting and semester constraints to create optimal
+    course schedules that respect prerequisite dependencies and balance
+    course load across semesters.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialize the schedule optimizer service.
+
+        Creates a Neo4j client connection for querying course and semester data.
+        """
         self.driver = get_neo4j_client()
 
     def optimize_schedule(self, student_id: str, constraints: ScheduleConstraints) -> OptimizedScheduleResponse:
@@ -56,8 +67,17 @@ class ScheduleOptimizerService:
             # 8. Build response
             return self._build_response(student_id, student_info, schedule, completed_courses)
 
-    def _get_student_info(self, session, student_id: str) -> Dict:
-        """Get student information and completed courses"""
+    def _get_student_info(self, session: Any, student_id: str) -> Dict[str, Union[str, List[str], None]]:
+        """
+        Get student information and completed courses.
+
+        Args:
+            session: Neo4j session object.
+            student_id: The student ID to get information for.
+
+        Returns:
+            Dictionary containing student name, program, and completed courses list.
+        """
         query = """
         MATCH (s:Student {id: $student_id})
         OPTIONAL MATCH (s)-[:HAS_COMPLETED]->(c:Course)
@@ -77,8 +97,16 @@ class ScheduleOptimizerService:
             "completed": [c for c in record["completed"] if c],
         }
 
-    def _get_all_courses_with_prereqs(self, session) -> Dict[str, Dict]:
-        """Get all courses with their prerequisites and metadata"""
+    def _get_all_courses_with_prereqs(self, session: Any) -> Dict[str, Dict[str, Union[str, int, List[str]]]]:
+        """
+        Get all courses with their prerequisites and metadata.
+
+        Args:
+            session: Neo4j session object.
+
+        Returns:
+            Dictionary mapping course codes to their metadata (name, credits, prerequisites).
+        """
         query = """
         MATCH (c:Course)
         OPTIONAL MATCH (c)-[:PRE_REQUIRES]->(prereq:Course)
@@ -99,8 +127,18 @@ class ScheduleOptimizerService:
 
         return courses
 
-    def _get_semester_offerings(self, session, start_semester: str, num_semesters: int) -> List[Dict]:
-        """Get ordered list of semesters with course offerings"""
+    def _get_semester_offerings(self, session: Any, start_semester: str, num_semesters: int) -> List[Dict[str, Union[str, int]]]:
+        """
+        Get ordered list of semesters with course offerings.
+
+        Args:
+            session: Neo4j session object.
+            start_semester: Starting semester ID.
+            num_semesters: Number of semesters to retrieve.
+
+        Returns:
+            List of dictionaries containing semester information and course offerings.
+        """
         query = """
         MATCH (s:Semester)
         WHERE s.id >= $start_semester
@@ -134,8 +172,14 @@ class ScheduleOptimizerService:
 
     def _build_prereq_graph(self, courses: Dict[str, Dict], completed: List[str]) -> Dict[str, Set[str]]:
         """
-        Build prerequisite dependency graph
-        Returns: {course_code: set(courses_that_depend_on_it)}
+        Build prerequisite dependency graph.
+
+        Args:
+            courses: Dictionary mapping course codes to course data.
+            completed: List of completed course codes.
+
+        Returns:
+            Dictionary mapping course codes to sets of courses that depend on them.
         """
         graph = defaultdict(set)
 
@@ -159,8 +203,15 @@ class ScheduleOptimizerService:
         self, graph: Dict[str, Set[str]], courses: Dict[str, Dict], completed: List[str]
     ) -> List[str]:
         """
-        Topological sort using Kahn's algorithm
-        Returns courses in order they can be taken
+        Topological sort using Kahn's algorithm.
+
+        Args:
+            graph: Prerequisite dependency graph.
+            courses: Dictionary mapping course codes to course data.
+            completed: List of completed course codes.
+
+        Returns:
+            List of course codes in topological order (prerequisites first).
         """
         # Calculate in-degree (number of prerequisites) for each course
         in_degree = defaultdict(int)
@@ -203,7 +254,17 @@ class ScheduleOptimizerService:
         completed: List[str],
     ) -> List[SemesterSchedule]:
         """
-        Assign courses to semesters respecting constraints
+        Assign courses to semesters respecting constraints.
+
+        Args:
+            sorted_courses: List of course codes in topological order.
+            courses: Dictionary mapping course codes to course data.
+            semesters: List of semester dictionaries with offerings.
+            constraints: Schedule constraints (max courses, credits, etc.).
+            completed: List of completed course codes.
+
+        Returns:
+            List of SemesterSchedule objects with assigned courses.
         """
         schedule = []
         courses_taken = set(completed)
@@ -270,7 +331,18 @@ class ScheduleOptimizerService:
     def _build_response(
         self, student_id: str, student_info: Dict, schedule: List[SemesterSchedule], completed: List[str]
     ) -> OptimizedScheduleResponse:
-        """Build the final response"""
+        """
+        Build the final optimized schedule response.
+
+        Args:
+            student_id: Student ID.
+            student_info: Dictionary with student name and program.
+            schedule: List of semester schedules.
+            completed: List of completed course codes.
+
+        Returns:
+            OptimizedScheduleResponse with complete schedule information.
+        """
         total_courses = sum(sem.total_courses for sem in schedule)
 
         warnings = []

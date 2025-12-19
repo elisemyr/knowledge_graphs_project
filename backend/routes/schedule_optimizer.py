@@ -52,8 +52,8 @@ async def optimize_schedule(
 
         return result
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error optimizing schedule: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error optimizing schedule: {str(exc)}")
 
 
 @router.get(
@@ -107,5 +107,5 @@ async def get_available_semesters(
 
             return {"student_id": student_id, "semesters": semesters, "total": len(semesters)}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching semesters: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error fetching semesters: {str(exc)}")
