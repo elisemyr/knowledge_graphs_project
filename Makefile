@@ -1,4 +1,4 @@
-.PHONY: help run docker-build docker-run clean venv install lint format tree
+.PHONY: help run docker-build docker-run clean venv install lint format tree test
 
 # Image tag (override with: make docker-build TAG=myorg/myapp:dev)
 TAG ?= graph-api:universityplanner-project
@@ -19,6 +19,7 @@ help:
 	@echo "  make docker-compose-down  Run docker compose down"
 	@echo "  make lint                 Run pylint (if configured)"
 	@echo "  make format               Run black code formatter"
+	@echo "  make test                 Run pytest tests"
 	@echo "  make clean                Remove caches and temp files"
 	@echo "  make tree                 Show project tree (depth 3)"
 
@@ -64,6 +65,13 @@ format:
 	@if command -v .venv/bin/black >/dev/null 2>&1; then \
 		.venv/bin/black ./backend/ -l 120; \
 	else echo "black not installed (add to requirements.txt)"; fi
+
+test:
+	@if command -v .venv/bin/pytest >/dev/null 2>&1; then \
+		.venv/bin/pytest tests/; \
+	else \
+		pytest tests/; \
+	fi
 
 clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} \; || true
