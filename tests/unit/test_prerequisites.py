@@ -1,4 +1,3 @@
-from services.prerequisites import get_prerequisites
 import pytest
 from backend.services import prerequisites
 
