@@ -4,6 +4,7 @@ neo4j
 python-dotenv
 pydantic
 pytest
+pytest-cov
 httpx
 pylint
 black

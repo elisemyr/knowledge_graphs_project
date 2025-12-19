@@ -16,6 +16,7 @@ from backend.routes import eligibility
 from backend.routes.degree_planner import router as degree_planner_router
 from backend.routes.graduation_paths import router as paths_router
 from backend.routes import schedule_optimizer
+from backend.routes.advanced_queries import router as advanced_queries_router
 
 app = FastAPI(title="Course Prerequisite Planner")
 
@@ -37,7 +38,7 @@ def root() -> Dict[str, str]:
 
 
 @app.get("/health")
-def health_check() -> Dict[str, bool]:
+def health_check() -> Dict[str, Union[str, bool]]:
     """
     Health check endpoint to verify API and Neo4j connectivity.
 
@@ -143,4 +144,5 @@ app.include_router(eligibility.router)
 app.include_router(degree_planner_router)
 app.include_router(paths_router)
 app.include_router(schedule_optimizer.router)
+app.include_router(advanced_queries_router)
 
