@@ -68,8 +68,10 @@ format:
 
 test:
 	@if command -v .venv/bin/pytest >/dev/null 2>&1; then \
+		.venv/bin/pip install -q pytest-cov || true; \
 		.venv/bin/pytest tests/test_app.py tests/test_schedule_optimizer.py tests/test_advanced_queries.py tests/test_degree_planner.py tests/test_graduation_paths.py tests/unit/ --cov=backend --cov-report=term --cov-fail-under=60; \
 	else \
+		pip install -q pytest-cov || true; \
 		pytest tests/test_app.py tests/test_schedule_optimizer.py tests/test_advanced_queries.py tests/test_degree_planner.py tests/test_graduation_paths.py tests/unit/ --cov=backend --cov-report=term --cov-fail-under=60; \
 	fi
 
