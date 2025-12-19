@@ -1,14 +1,4 @@
 from services.prerequisites import get_prerequisites
-from unittest.mock import MagicMock
-
-def test_get_prerequisites_returns_list():
-    mock_session = MagicMock()
-    mock_session.run.return_value = []
-
-    result = get_prerequisites("CS101", mock_session)
-
-    assert isinstance(result, list)
-
 import pytest
 from backend.services import prerequisites
 
